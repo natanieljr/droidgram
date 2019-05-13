@@ -27,9 +27,9 @@ class GrammarExtractor(private val mModelDir: Path) {
         .filterNot { it.contains(";ActionQueue-START;") }
         .filterNot { it.contains(";ActionQueue-End;") }
         .filterNot { it.contains(";EnableWifi;") }
-        .filterNot { it.contains(";PressBack;") }
+        // .filterNot { it.contains(";PressBack;") }
         .filterNot { it.contains(";CloseKeyboard;") }
-        .filterNot { it.contains(";Terminate;") }
+        // .filterNot { it.contains(";Terminate;") }
         .filterNot { it.contains(";Back;") }
         .toList()
 
@@ -68,17 +68,37 @@ class GrammarExtractor(private val mModelDir: Path) {
             val resultState = data[3].getId("s")
             val resultStateNonTerminal = "<$resultState>"
 
-            val terminal = "$widgetUID.$action"
-            val nonTerminal = "<$sourceStateUID.$widgetUID.$action>"
-
             if (action == "LaunchApp") {
                 grammar.addRule("<start>", resultStateNonTerminal)
+            } else if (action == "PressBack") {
+                val productionRule = "<$sourceStateUID.$action>"
+
+                grammar.addRule(sourceStateNonTerminal, productionRule)
+                grammar.addRule(productionRule, resultStateNonTerminal)
+            } else if (action == "Terminate") {
+                val productionRule = "<$sourceStateUID.$action>"
+
+                grammar.addRule(sourceStateNonTerminal, productionRule)
+                grammar.addRule(productionRule, "<empty>")
             } else {
+                val terminal = "$widgetUID.$action"
+                val nonTerminal = "<$sourceStateUID.$widgetUID.$action>"
                 val productionRule = "$terminal $nonTerminal"
+
                 grammar.addRule(sourceStateNonTerminal, productionRule)
                 grammar.addRule(nonTerminal, resultStateNonTerminal)
             }
         }
+
+        postProcessGrammar()
+    }
+
+    /**
+     * Postprocessing includes: removing duplicate productions, removing terminate state
+     */
+    private fun postProcessGrammar() {
+        grammar.removeDuplicates()
+        grammar.removeTerminateActions()
     }
 
     val grammar by lazy {

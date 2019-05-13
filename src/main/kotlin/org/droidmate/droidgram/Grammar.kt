@@ -3,7 +3,7 @@ package org.droidmate.droidgram
 class Grammar @JvmOverloads constructor(
     val startSymbol: String = "<start>",
     private val emptySymbol: String = "<empty>",
-    val nonTerminalRegex: Regex = defaultNonTerminalRegex,
+    // val nonTerminalRegex: Regex = defaultNonTerminalRegex,
     initialGrammar: Map<String, Set<String>> =
         mapOf(
             emptySymbol to setOf(""),
@@ -26,6 +26,36 @@ class Grammar @JvmOverloads constructor(
             .toMutableMap()
     }
 
+    fun removeTerminateActions() {
+        val terminateActions = grammar.keys
+            .filter { it.contains("Terminate") }
+
+        terminateActions.forEach { terminateProduction ->
+            grammar.replaceAll { key, value ->
+                value.map {it.replace(terminateProduction, "<empty>") }.toMutableSet()
+            }
+            grammar.remove(terminateProduction)
+        }
+    }
+
+    fun removeDuplicates() {
+        val duplicates = grammar.entries
+            .groupBy { it.value }
+            .filter { it.value.size > 1 }
+            .map { it.value.map { it.key } }
+
+        duplicates.forEach { keys ->
+            val target = keys.first()
+
+            keys.drop(1).forEach { oldKey ->
+                grammar.replaceAll { k, v ->
+                    v.map { it.replace(oldKey, target) }.toMutableSet()
+                }
+                grammar.remove(oldKey)
+            }
+        }
+    }
+
     fun addRule(name: String, item: String) {
         val emptySet = if (name.contains(".")) {
             mutableSetOf(emptySymbol)
@@ -41,7 +71,7 @@ class Grammar @JvmOverloads constructor(
         grammar
             .toSortedMap()
             .forEach { key, value ->
-                println("'${(key + "'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],")
+                println("'${("$key'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],")
             }
     }
 

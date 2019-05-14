@@ -1,5 +1,6 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.mining
 
+import org.droidmate.droidgram.grammar.Grammar
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.file.FileVisitOption
@@ -18,7 +19,9 @@ class GrammarExtractor(private val mModelDir: Path) {
         return if (uuid.isEmpty()) {
             ""
         } else {
-            mIdMapping.getOrPut(uuid) { prefix + mIdMapping.values.count { it.startsWith(prefix) } }
+            mIdMapping.getOrPut(uuid) {
+                prefix + (mIdMapping.values.count { it.startsWith(prefix) }.toString().padStart(2, '0'))
+            }
         }
     }
 
@@ -97,7 +100,7 @@ class GrammarExtractor(private val mModelDir: Path) {
      * Postprocessing includes: removing duplicate productions, removing terminate state
      */
     private fun postProcessGrammar() {
-        grammar.removeDuplicates()
+        grammar.mergeEquivalentTransitions()
         grammar.removeTerminateActions()
     }
 

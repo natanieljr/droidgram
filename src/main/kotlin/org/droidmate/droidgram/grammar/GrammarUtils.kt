@@ -1,4 +1,4 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.grammar
 
 val defaultNonTerminalRegex = "(<[^<> ]*>)".toPattern().toRegex()
 

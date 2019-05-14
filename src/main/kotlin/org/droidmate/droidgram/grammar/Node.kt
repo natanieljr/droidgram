@@ -1,4 +1,4 @@
-package org.droidmate.droidgram
+/*package org.droidmate.droidgram.grammar
 
 data class Node(val symbol: String, val children: List<String>? = null) {
     override fun equals(other: Any?): Boolean {
@@ -8,4 +8,4 @@ data class Node(val symbol: String, val children: List<String>? = null) {
     override fun hashCode(): Int {
         return symbol.hashCode()
     }
-}
+}*/

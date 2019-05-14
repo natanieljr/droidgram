@@ -1,4 +1,4 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.grammar
 
 class Grammar @JvmOverloads constructor(
     val startSymbol: String = "<start>",
@@ -31,14 +31,14 @@ class Grammar @JvmOverloads constructor(
             .filter { it.contains("Terminate") }
 
         terminateActions.forEach { terminateProduction ->
-            grammar.replaceAll { key, value ->
-                value.map {it.replace(terminateProduction, "<empty>") }.toMutableSet()
+            grammar.replaceAll { _, value ->
+                value.map { it.replace(terminateProduction, "<empty>") }.toMutableSet()
             }
             grammar.remove(terminateProduction)
         }
     }
 
-    fun removeDuplicates() {
+    fun mergeEquivalentTransitions() {
         val duplicates = grammar.entries
             .groupBy { it.value }
             .filter { it.value.size > 1 }
@@ -48,7 +48,7 @@ class Grammar @JvmOverloads constructor(
             val target = keys.first()
 
             keys.drop(1).forEach { oldKey ->
-                grammar.replaceAll { k, v ->
+                grammar.replaceAll { _, v ->
                     v.map { it.replace(oldKey, target) }.toMutableSet()
                 }
                 grammar.remove(oldKey)
@@ -69,8 +69,11 @@ class Grammar @JvmOverloads constructor(
 
     fun print() {
         grammar
-            .toSortedMap()
-            .forEach { key, value ->
+            .entries
+            .sortedBy { it.key }
+            .forEach { entry ->
+                val key = entry.key
+                val value = entry.value.toSortedSet()
                 println("'${("$key'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],")
             }
     }

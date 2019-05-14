@@ -1,5 +1,8 @@
 package org.droidmate.droidgram
 
+import org.droidmate.droidgram.grammar.Grammar
+import org.droidmate.droidgram.grammar.isNonTerminal
+import org.droidmate.droidgram.grammar.nonTerminals
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -32,7 +35,12 @@ class GrammarTests {
 
     @Test
     fun invalidGrammarTest() {
-        assert(!Grammar(initialGrammar = mapOf("<start>" to setOf("<x>"), "<y>" to setOf("1"))).isValid())
+        assert(!Grammar(
+            initialGrammar = mapOf(
+                "<start>" to setOf("<x>"),
+                "<y>" to setOf("1")
+            )
+        ).isValid())
         assert(!Grammar(initialGrammar = mapOf("<start>" to setOf("123"))).isValid())
         assert(!Grammar(initialGrammar = mapOf("<start>" to emptySet())).isValid())
         assert(!Grammar(initialGrammar = mapOf("<start>" to setOf("1", "2", "3"))).isValid())

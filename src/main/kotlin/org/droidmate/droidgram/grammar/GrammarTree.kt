@@ -1,4 +1,4 @@
-/*package org.droidmate.droidgram
+package org.droidmate.droidgram.grammar/*package org.droidmate.droidgram
 
 data class GrammarTree(private val originalGrammar: Grammar,
                        private val initialSymbol : String = "<start>") {

@@ -55,8 +55,6 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
         val actionStr = inputList[currIndex].second
 
         return when (actionStr) {
-            "FetchGUI" -> GlobalAction(ActionType.FetchGUI)
-
             "Click" -> this.click(0, true)
             "ClickEvent" -> this.clickEvent(0, true)
 
@@ -77,11 +75,14 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
             currIndex < 0 -> context.resetApp()
 
             else -> {
-                val targetUID = inputList[currIndex].first
+                val target = inputList[currIndex]
+                val targetUID = target.first
                 val targetWidget = state.actionableWidgets.firstOrNull { it.uid == targetUID }
 
                 if (targetWidget != null) {
                     targetWidget.toAction()
+                } else if (target.second == "FetchGUI") {
+                    GlobalAction(ActionType.FetchGUI)
                 } else {
                     nextInteraction(state)
                 }

@@ -8,7 +8,24 @@ group 'org.droidmate'
 version '1.0-SNAPSHOT'
 
 repositories {
+    mavenLocal()
     mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+apply plugin: 'java'
+
+task sourcesJar(type: Jar, dependsOn: "classes") {
+    classifier = 'sources'
+    from sourceSets.main.allJava
+    from sourceSets.main.allSource
+    from sourceSets.test.allSource
+}
+
+apply plugin: 'maven'
+
+artifacts {
+    archives sourcesJar
 }
 
 dependencies {
@@ -16,6 +33,14 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test:1.3.21"
     
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0'
+
+    compile ("com.github.uds-se.droidmate:droidmate-2:1.3.3-RC1") {
+        exclude( module: "explorationModel" )
+    }
+
+    implementation 'com.github.hotzkow:ExplorationModel:dev-SNAPSHOT'
 }
 
 compileKotlin {

@@ -12,7 +12,7 @@ object ExplorationRunner {
         runBlocking {
             val cfg = ExplorationAPI.config(args)
 
-            val modelProvider: (String) -> Model = { appName -> CustomModel.create(ModelConfig(appName, cfg = cfg)) }
+            val modelProvider: (String) -> Model = { appName -> CustomModel(ModelConfig(appName, cfg = cfg)) }
             ExplorationAPI.explore(cfg, modelProvider = modelProvider)
         }
     }

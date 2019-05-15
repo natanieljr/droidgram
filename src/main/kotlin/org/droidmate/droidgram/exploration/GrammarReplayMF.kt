@@ -11,6 +11,7 @@ import org.droidmate.exploration.actions.clickEvent
 import org.droidmate.exploration.actions.longClick
 import org.droidmate.exploration.actions.longClickEvent
 import org.droidmate.exploration.actions.resetApp
+import org.droidmate.exploration.actions.terminateApp
 import org.droidmate.exploration.actions.tick
 import org.droidmate.exploration.modelFeatures.ModelFeature
 import org.droidmate.explorationModel.interaction.State
@@ -51,7 +52,7 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
         this.context = context
     }
 
-    fun Widget.toAction(): ExplorationAction {
+    private fun Widget.toAction(): ExplorationAction {
         val actionStr = inputList[currIndex].second
 
         return when (actionStr) {
@@ -67,10 +68,10 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
         }
     }
 
-    fun nextInteraction(state: State): ExplorationAction? {
+    fun nextAction(state: State): ExplorationAction {
         currIndex++
         return when {
-            currIndex >= inputList.size -> null
+            currIndex >= inputList.size -> terminateApp()
 
             currIndex < 0 -> context.resetApp()
 
@@ -84,7 +85,7 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
                 } else if (target.second == "FetchGUI") {
                     GlobalAction(ActionType.FetchGUI)
                 } else {
-                    nextInteraction(state)
+                    nextAction(state)
                 }
             }
         }

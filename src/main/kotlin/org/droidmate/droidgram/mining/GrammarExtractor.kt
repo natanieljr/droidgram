@@ -69,6 +69,12 @@ class GrammarExtractor(private val mModelDir: Path) {
             } else {
                 data[2]
             }
+            val textualData = if (action == "TextInsert") {
+                ",${data.dropLast(1).last()}"
+            } else {
+                ""
+            }
+
             val resultState = data[3].getId("s")
             val resultStateNonTerminal = "<$resultState>"
 
@@ -85,8 +91,8 @@ class GrammarExtractor(private val mModelDir: Path) {
                 grammar.addRule(sourceStateNonTerminal, productionRule)
                 grammar.addRule(productionRule, "<empty>")
             } else {
-                val terminal = "$action($widgetUID)"
-                val nonTerminal = "<$action($sourceStateUID.$widgetUID)>"
+                val terminal = "$action($widgetUID$textualData)"
+                val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
                 val productionRule = "$terminal $nonTerminal"
 
                 grammar.addRule(sourceStateNonTerminal, productionRule)
@@ -137,7 +143,7 @@ class GrammarExtractor(private val mModelDir: Path) {
             extractor.mapping
                 .toSortedMap()
                 .forEach { key, value ->
-                    println("\"$key\" to \t\"$value\", ")
+                    println("\"$key\"to\t\"$value\", ")
                 }
         }
     }

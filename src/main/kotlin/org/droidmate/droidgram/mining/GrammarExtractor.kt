@@ -31,10 +31,11 @@ class GrammarExtractor(private val mModelDir: Path) {
         .filterNot { it.contains(";ActionQueue-End;") }
         .filterNot { it.contains(";EnableWifi;") }
         // .filterNot { it.contains(";PressBack;") }
-        .filterNot { it.contains(";CloseKeyboard;") }
         // .filterNot { it.contains(";Terminate;") }
+        .filterNot { it.contains(";CloseKeyboard;") }
         .filterNot { it.contains(";Back;") }
         .filterNot { it.contains(";FetchGUI;") }
+        .filterNot { it.contains(";LongClickEvent;null;") }
         .toList()
 
     private fun getTraceFile(modelDir: Path): List<String> {

@@ -5,6 +5,7 @@ import org.droidmate.deviceInterface.exploration.Click
 import org.droidmate.deviceInterface.exploration.ClickEvent
 import org.droidmate.deviceInterface.exploration.LongClick
 import org.droidmate.deviceInterface.exploration.LongClickEvent
+import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.Tick
 import java.util.UUID
 
@@ -43,4 +44,6 @@ data class GrammarInput(val widget: UUID, val action: String, val textualInput: 
     fun isLongClickEvent(): Boolean = action == LongClickEvent.name
 
     fun isTick(): Boolean = action == Tick.name
+
+    fun isTextInsert(): Boolean = action == TextInsert.name
 }

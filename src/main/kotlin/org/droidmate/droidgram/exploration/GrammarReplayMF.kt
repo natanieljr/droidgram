@@ -1,7 +1,9 @@
 package org.droidmate.droidgram.exploration
 
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.GlobalAction
@@ -11,12 +13,14 @@ import org.droidmate.exploration.actions.clickEvent
 import org.droidmate.exploration.actions.longClick
 import org.droidmate.exploration.actions.longClickEvent
 import org.droidmate.exploration.actions.resetApp
+import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.actions.terminateApp
 import org.droidmate.exploration.actions.tick
 import org.droidmate.exploration.modelFeatures.ModelFeature
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.lang.IllegalStateException
+import java.nio.file.Files
 import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
@@ -53,13 +57,15 @@ class GrammarReplayMF(generatedInput: String, private val grammarMapping: Map<St
         val input = inputList[currIndex]
 
         return when {
-            input.isClick() -> this.click(0, true)
-            input.isClickEvent() -> this.clickEvent(0, true)
+            input.isClick() -> this.click(0, isVisible = true, ignoreClickable = true)
+            input.isClickEvent() -> this.clickEvent(0, ignoreClickable = true)
 
             input.isLongClick() -> this.longClick(0, true)
-            input.isLongClickEvent() -> this.longClickEvent(0, true)
+            input.isLongClickEvent() -> this.longClickEvent(0, ignoreVisibility = true)
 
-            input.isTick() -> this.tick(0, true)
+            input.isTick() -> this.tick(0, ignoreVisibility = true)
+
+            input.isTextInsert() -> this.setText(input.textualInput, ignoreVisibility = true)
 
             else -> throw IllegalStateException("Unsupported action type: $input")
         }
@@ -103,12 +109,18 @@ class GrammarReplayMF(generatedInput: String, private val grammarMapping: Map<St
     }
 
     override suspend fun dump(context: ExplorationContext) {
-        // Wait to finish
-        this.cancelAndJoin()
+        val sb = StringBuilder()
 
-        println("Non-reproducible inputs:")
         missingInputs.forEach { input ->
-            log.warn(input.toString())
+            sb.appendln(input.toString())
         }
+
+        val modelDir = context.model.config.baseDir
+        val reportFile = modelDir.resolve("missingElementsInput.txt").toAbsolutePath()
+
+        log.info("Writing missing inputs report to $reportFile")
+        Files.write(reportFile, sb.toString().toByteArray())
+
+        log.warn("Non-reproducible inputs: \n ${sb.toString().trim()}")
     }
 }

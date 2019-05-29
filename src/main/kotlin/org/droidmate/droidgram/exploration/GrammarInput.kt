@@ -16,18 +16,17 @@ data class GrammarInput(val widget: UUID, val action: String, val textualInput: 
 
         fun fromString(input: String, translationTable: Map<String, UUID>): GrammarInput {
             val action = input.split("(").first()
-            val stateWidget = input.removePrefix("$action(").removeSuffix(")").split(".")
-            assert(stateWidget.size <= 2) { "Invalid target action: $input. Expecting at most 1 '.'" }
+            val widget = input.removePrefix("$action(").removeSuffix(")").split(",").first()
 
-            val target = when (stateWidget.size) {
-                1 -> stateWidget[0]
-                2 -> stateWidget[1]
-                else -> throw IllegalArgumentException("Unknown target in payload $stateWidget")
+            assert(widget != "null") { "Widget must be not null" }
+
+            val textualData = if (input.contains(",")) {
+                input.removeSuffix(")").split(",").last()
+            } else {
+                ""
             }
 
-            val textualData = input.removeSuffix(")").split(",").last()
-
-            return GrammarInput(translationTable.getUID(target), action, textualData)
+            return GrammarInput(translationTable.getUID(widget), action, textualData)
         }
 
         fun createFetch(target: GrammarInput): GrammarInput {

@@ -20,11 +20,13 @@ import java.lang.IllegalStateException
 import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
-class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, String>) : ModelFeature() {
+class GrammarReplayMF(generatedInput: String, private val grammarMapping: Map<String, String>) : ModelFeature() {
     override val coroutineContext: CoroutineContext = CoroutineName("GrammarReplayMF") + Job()
 
     private var currIndex: Int = -2
     private lateinit var context: ExplorationContext
+
+    private val missingInputs = mutableListOf<GrammarInput>()
 
     private val translationTable: Map<String, UUID> by lazy {
         grammarMapping
@@ -86,6 +88,7 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
                     // Widget not on screen, skip and see what happens
                     else -> {
                         log.warn("Widget is ID: $targetUID was not found, proceeding with input")
+                        missingInputs.add(target)
                         nextAction(state, false)
                     }
                 }
@@ -97,5 +100,15 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
         }
 
         return action
+    }
+
+    override suspend fun dump(context: ExplorationContext) {
+        // Wait to finish
+        this.cancelAndJoin()
+
+        println("Non-reproducible inputs:")
+        missingInputs.forEach { input ->
+            log.warn(input.toString())
+        }
     }
 }

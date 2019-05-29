@@ -1,9 +1,7 @@
 package org.droidmate.droidgram.exploration
 
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.withContext
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.GlobalAction
@@ -24,18 +22,13 @@ import java.nio.file.Files
 import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
-class GrammarReplayMF(generatedInput: String, private val grammarMapping: Map<String, String>) : ModelFeature() {
+class GrammarReplayMF(generatedInput: String, private val translationTable: Map<String, UUID>) : ModelFeature() {
     override val coroutineContext: CoroutineContext = CoroutineName("GrammarReplayMF") + Job()
 
     private var currIndex: Int = -2
     private lateinit var context: ExplorationContext
 
     private val missingInputs = mutableListOf<GrammarInput>()
-
-    private val translationTable: Map<String, UUID> by lazy {
-        grammarMapping
-            .mapValues { UUID.fromString(it.value) }
-    }
 
     private val inputList by lazy {
         generatedInput

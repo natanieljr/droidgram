@@ -114,6 +114,6 @@ class GrammarReplayMF(generatedInput: String, private val translationTable: Map<
         log.info("Writing missing inputs report to $reportFile")
         Files.write(reportFile, sb.toString().toByteArray())
 
-        log.warn("Non-reproducible inputs: \n ${sb.toString().trim()}")
+        log.warn("Non-reproducible inputs:\n${sb.toString().trim()}")
     }
 }

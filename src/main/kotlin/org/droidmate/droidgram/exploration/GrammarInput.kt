@@ -9,7 +9,7 @@ import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.Tick
 import java.util.UUID
 
-data class GrammarInput(val widget: UUID, val action: String, val textualInput: String) {
+data class GrammarInput(val grammarId: String, val widget: UUID, val action: String, val textualInput: String) {
     companion object {
         private fun Map<String, UUID>.getUID(key: String): UUID {
             return this[key] ?: throw IllegalArgumentException("Key $key not found in the translation table")
@@ -27,11 +27,11 @@ data class GrammarInput(val widget: UUID, val action: String, val textualInput: 
                 ""
             }
 
-            return GrammarInput(translationTable.getUID(widget), action, textualData)
+            return GrammarInput(widget, translationTable.getUID(widget), action, textualData)
         }
 
         fun createFetch(target: GrammarInput): GrammarInput {
-            return GrammarInput(target.widget, ActionType.FetchGUI.name, "")
+            return GrammarInput(target.grammarId, target.widget, ActionType.FetchGUI.name, "")
         }
     }
 

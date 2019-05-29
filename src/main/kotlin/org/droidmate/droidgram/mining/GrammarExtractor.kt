@@ -34,6 +34,7 @@ class GrammarExtractor(private val mModelDir: Path) {
         .filterNot { it.contains(";CloseKeyboard;") }
         // .filterNot { it.contains(";Terminate;") }
         .filterNot { it.contains(";Back;") }
+        .filterNot { it.contains(";FetchGUI;") }
         .toList()
 
     private fun getTraceFile(modelDir: Path): List<String> {
@@ -74,18 +75,18 @@ class GrammarExtractor(private val mModelDir: Path) {
             if (action == "LaunchApp") {
                 grammar.addRule("<start>", resultStateNonTerminal)
             } else if (action == "PressBack") {
-                val productionRule = "<$sourceStateUID.$action>"
+                val productionRule = "<$action($sourceStateUID)>"
 
                 grammar.addRule(sourceStateNonTerminal, productionRule)
                 grammar.addRule(productionRule, resultStateNonTerminal)
             } else if (action == "Terminate") {
-                val productionRule = "<$sourceStateUID.$action>"
+                val productionRule = "<$action($sourceStateUID)>"
 
                 grammar.addRule(sourceStateNonTerminal, productionRule)
                 grammar.addRule(productionRule, "<empty>")
             } else {
-                val terminal = "$widgetUID.$action"
-                val nonTerminal = "<$sourceStateUID.$widgetUID.$action>"
+                val terminal = "$action($widgetUID)"
+                val nonTerminal = "<$action($sourceStateUID.$widgetUID)>"
                 val productionRule = "$terminal $nonTerminal"
 
                 grammar.addRule(sourceStateNonTerminal, productionRule)
@@ -136,7 +137,7 @@ class GrammarExtractor(private val mModelDir: Path) {
             extractor.mapping
                 .toSortedMap()
                 .forEach { key, value ->
-                    println("$key ->\t$value")
+                    println("\"$key\" to \t\"$value\", ")
                 }
         }
     }

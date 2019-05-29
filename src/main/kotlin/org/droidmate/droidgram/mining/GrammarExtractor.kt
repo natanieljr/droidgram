@@ -144,7 +144,7 @@ class GrammarExtractor(private val mModelDir: Path) {
             extractor.mapping
                 .toSortedMap()
                 .forEach { key, value ->
-                    println("\"$key\" to\t\"$value\", ")
+                    println("\"$key\" to \"$value\", ")
                 }
         }
     }

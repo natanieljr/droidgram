@@ -11,6 +11,6 @@ class GrammarStrategy(generatedInput: String, grammarMapping: Map<String, String
     }
 
     override suspend fun chooseAction(): ExplorationAction {
-        return grammarWatcher.nextAction(currentState)
+        return grammarWatcher.nextAction(currentState, true)
     }
 }

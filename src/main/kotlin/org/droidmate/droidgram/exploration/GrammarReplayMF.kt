@@ -34,18 +34,25 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
     private val inputList by lazy {
         generatedInput
             .split(" ")
+            .filter { it.isNotEmpty() }
             .flatMap {
-                val targetAction = it.split(".")
-                assert(targetAction.size == 2) { "Invalid target action: $targetAction. Expecting only one '.'" }
-                val target = targetAction[0]
-                val action = targetAction[1]
+                val action = it.split("(").first()
+                val data = it.removePrefix("$action(") .removeSuffix(")") .split(".")
+                assert(data.size <= 3) { "Invalid target action: $it. Expecting at most 2 '.'" }
 
-                listOf(Pair(getUID(target), action), Pair(getUID(target), "FetchGUI"))
+                val target = when (data.size) {
+                    1 -> data[0]
+                    2 -> data[1]
+                    3 -> data[1]
+                    else -> throw IllegalArgumentException("Unknown target in payload $data")
+                }
+
+                listOf(Pair(getUID(target), "FetchGUI"), Pair(getUID(target), action))
             }
     }
 
     private fun getUID(key: String): UUID {
-        return translationTable.get(key) ?: throw IllegalArgumentException("Key $key not found in the translation table")
+        return translationTable[key] ?: throw IllegalArgumentException("Key $key not found in the translation table")
     }
 
     override fun onAppExplorationStarted(context: ExplorationContext) {
@@ -68,9 +75,10 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
         }
     }
 
-    fun nextAction(state: State): ExplorationAction {
+    @JvmOverloads
+    fun nextAction(state: State, printLog: Boolean = false): ExplorationAction {
         currIndex++
-        return when {
+        val action = when {
             currIndex >= inputList.size -> terminateApp()
 
             currIndex < 0 -> context.resetApp()
@@ -80,14 +88,26 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
                 val targetUID = target.first
                 val targetWidget = state.actionableWidgets.firstOrNull { it.uid == targetUID }
 
-                if (targetWidget != null) {
-                    targetWidget.toAction()
-                } else if (target.second == "FetchGUI") {
-                    GlobalAction(ActionType.FetchGUI)
-                } else {
-                    nextAction(state)
+                when {
+                    // Sequence of actions is Fetch -> Execute, if the widget is already here, skip the fetch
+                    (targetWidget != null) && (target.second == "FetchGUI") -> nextAction(state, false)
+                    // Widget is on screen, interact with it
+                    (targetWidget != null) -> targetWidget.toAction()
+                    // No widget on screen and is fetch... try fetching
+                    (target.second == "FetchGUI") -> GlobalAction(ActionType.FetchGUI)
+                    // Widget not on screen, skip and see what happens
+                    else -> {
+                        log.warn("Widget is ID: $targetUID was not found, proceeding with input")
+                        nextAction(state, false)
+                    }
                 }
             }
         }
+
+        if (printLog) {
+            log.info("Generating action: $action")
+        }
+
+        return action
     }
 }

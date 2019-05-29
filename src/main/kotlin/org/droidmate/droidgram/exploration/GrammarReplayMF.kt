@@ -36,23 +36,11 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
             .split(" ")
             .filter { it.isNotEmpty() }
             .flatMap {
-                val action = it.split("(").first()
-                val data = it.removePrefix("$action(") .removeSuffix(")") .split(".")
-                assert(data.size <= 3) { "Invalid target action: $it. Expecting at most 2 '.'" }
+                val actionInput = GrammarInput.fromString(it, translationTable)
+                val fetchInput = GrammarInput.createFetch(actionInput)
 
-                val target = when (data.size) {
-                    1 -> data[0]
-                    2 -> data[1]
-                    3 -> data[1]
-                    else -> throw IllegalArgumentException("Unknown target in payload $data")
-                }
-
-                listOf(Pair(getUID(target), "FetchGUI"), Pair(getUID(target), action))
+                listOf(fetchInput, actionInput)
             }
-    }
-
-    private fun getUID(key: String): UUID {
-        return translationTable[key] ?: throw IllegalArgumentException("Key $key not found in the translation table")
     }
 
     override fun onAppExplorationStarted(context: ExplorationContext) {
@@ -60,18 +48,18 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
     }
 
     private fun Widget.toAction(): ExplorationAction {
-        val actionStr = inputList[currIndex].second
+        val input = inputList[currIndex]
 
-        return when (actionStr) {
-            "Click" -> this.click(0, true)
-            "ClickEvent" -> this.clickEvent(0, true)
+        return when {
+            input.isClick() -> this.click(0, true)
+            input.isClickEvent() -> this.clickEvent(0, true)
 
-            "LongClick" -> this.longClick(0, true)
-            "LongClickEvent" -> this.longClickEvent(0, true)
+            input.isLongClick() -> this.longClick(0, true)
+            input.isLongClickEvent() -> this.longClickEvent(0, true)
 
-            "Tick" -> this.tick(0, true)
+            input.isTick() -> this.tick(0, true)
 
-            else -> throw IllegalStateException("Unsupported action type: $actionStr")
+            else -> throw IllegalStateException("Unsupported action type: $input")
         }
     }
 
@@ -85,16 +73,16 @@ class GrammarReplayMF(generatedInput: String, val grammarMapping: Map<String, St
 
             else -> {
                 val target = inputList[currIndex]
-                val targetUID = target.first
+                val targetUID = target.widget
                 val targetWidget = state.actionableWidgets.firstOrNull { it.uid == targetUID }
 
                 when {
                     // Sequence of actions is Fetch -> Execute, if the widget is already here, skip the fetch
-                    (targetWidget != null) && (target.second == "FetchGUI") -> nextAction(state, false)
+                    (targetWidget != null) && target.isFetch() -> nextAction(state, false)
                     // Widget is on screen, interact with it
                     (targetWidget != null) -> targetWidget.toAction()
                     // No widget on screen and is fetch... try fetching
-                    (target.second == "FetchGUI") -> GlobalAction(ActionType.FetchGUI)
+                    (target.isFetch()) -> GlobalAction(ActionType.FetchGUI)
                     // Widget not on screen, skip and see what happens
                     else -> {
                         log.warn("Widget is ID: $targetUID was not found, proceeding with input")

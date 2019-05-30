@@ -81,6 +81,7 @@ class GrammarExtractor(private val mModelDir: Path) {
 
             if (action == "LaunchApp") {
                 grammar.addRule("<start>", resultStateNonTerminal)
+                grammar.addRule(sourceStateNonTerminal, "<empty>")
             } else if (action == "PressBack") {
                 val productionRule = "<$action($sourceStateUID)>"
 

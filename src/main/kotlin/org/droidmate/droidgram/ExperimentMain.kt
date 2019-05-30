@@ -5,12 +5,14 @@ import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
 import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.droidgram.exploration.GrammarExplorationRunner
+import org.droidmate.droidgram.exploration.GrammarReplayMF
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.UUID
+import kotlin.streams.toList
 
 object ExperimentMain {
     @JvmStatic
@@ -26,7 +28,7 @@ object ExperimentMain {
         ),
         CommandLineOption(
             CommandLineConfig.translation,
-            description = "Path to a translation table between the grammar symbols and UUID (one per record line, sepated by ;)",
+            description = "Path to a translation table between the grammar symbols and UUID (one per record line, split by ;)",
             short = "t",
             metavar = "Path"
         )
@@ -65,6 +67,13 @@ object ExperimentMain {
             .filter { it.isNotEmpty() }
     }
 
+    private fun getTerminals(inputs: List<String>): Set<String> {
+        return inputs.flatMap {
+            it.split(" ")
+                .filter { it.isNotEmpty() }
+        }.toSet()
+    }
+
     private fun getTranslationTable(translationTableFile: Path): Map<String, UUID> {
         return Files.readAllLines(translationTableFile)
             .filter { it.isNotEmpty() }
@@ -78,6 +87,33 @@ object ExperimentMain {
 
                 Pair(id, uuid)
             }.toMap()
+    }
+
+    private fun getReachedElementsFiles(path: Path): List<Path> {
+        return Files.walk(path)
+            .filter { it.fileName.toString() == GrammarReplayMF.reachedTerminals }
+            .toList()
+    }
+
+    private fun getReachedTerminals(cfg: ConfigurationWrapper): Set<String> {
+        return getReachedElementsFiles(cfg.droidmateOutputDirPath.parent)
+            .flatMap { Files.readAllLines(it) }
+            .filter { it.isNotEmpty() }
+            .map { stmt -> stmt.takeWhile { it != ';' } }
+            .toSet()
+    }
+
+    @JvmStatic
+    private fun calculateGrammarCoverage(terminals: Set<String>, cfg: ConfigurationWrapper): Double {
+        val reachedTerminals = getReachedTerminals(cfg)
+
+        val missingTerminals = terminals - reachedTerminals
+
+        val difference = missingTerminals.size.toDouble()
+
+        log.info("Terminal coverage: ${1 - (difference / terminals.size)}")
+
+        return difference
     }
 
     @JvmStatic
@@ -95,6 +131,7 @@ object ExperimentMain {
 
             val inputValues = getInputs(inputFile)
             val translationTable = getTranslationTable(translationTableFile)
+            val terminals = getTerminals(inputValues)
 
             inputValues.forEachIndexed { index, input ->
                 val experimentArgs = arrayOf("--Output-outputDir=out/$index", *args)
@@ -102,6 +139,8 @@ object ExperimentMain {
                 val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                 GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, translationTable)
             }
+
+            calculateGrammarCoverage(terminals, cfg)
         }
     }
 }

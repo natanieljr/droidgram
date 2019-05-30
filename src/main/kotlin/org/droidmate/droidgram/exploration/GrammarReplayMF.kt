@@ -23,12 +23,18 @@ import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
 class GrammarReplayMF(generatedInput: String, private val translationTable: Map<String, UUID>) : ModelFeature() {
+    companion object {
+        val notReachedTerminals = "notReachedTerminals.txt"
+        val reachedTerminals = "reachedTerminals.txt"
+    }
+
     override val coroutineContext: CoroutineContext = CoroutineName("GrammarReplayMF") + Job()
 
     private var currIndex: Int = -2
     private lateinit var context: ExplorationContext
 
-    private val missingInputs = mutableListOf<GrammarInput>()
+    private val missedInputs = mutableListOf<GrammarInput>()
+    private val reachedInputs = mutableListOf<GrammarInput>()
 
     private val inputList by lazy {
         generatedInput
@@ -80,14 +86,20 @@ class GrammarReplayMF(generatedInput: String, private val translationTable: Map<
                 when {
                     // Sequence of actions is Fetch -> Execute, if the widget is already here, skip the fetch
                     (targetWidget != null) && target.isFetch() -> nextAction(state, false)
+
                     // Widget is on screen, interact with it
-                    (targetWidget != null) -> targetWidget.toAction()
+                    (targetWidget != null) -> {
+                        reachedInputs.add(target)
+                        targetWidget.toAction()
+                    }
+
                     // No widget on screen and is fetch... try fetching
                     (target.isFetch()) -> GlobalAction(ActionType.FetchGUI)
+
                     // Widget not on screen, skip and see what happens
                     else -> {
                         log.warn("Widget is ID: $targetUID was not found, proceeding with input")
-                        missingInputs.add(target)
+                        missedInputs.add(target)
                         nextAction(state, false)
                     }
                 }
@@ -101,19 +113,22 @@ class GrammarReplayMF(generatedInput: String, private val translationTable: Map<
         return action
     }
 
-    override suspend fun dump(context: ExplorationContext) {
+    private fun writeReport(reportName: String, data: List<GrammarInput>) {
         val sb = StringBuilder()
 
-        missingInputs.forEach { input ->
-            sb.appendln(input.toString())
+        data.forEach { input ->
+            sb.appendln("${input.grammarId};${input.toString()}")
         }
 
         val modelDir = context.model.config.baseDir
-        val reportFile = modelDir.resolve("missingElementsInput.txt").toAbsolutePath()
+        val reportFile = modelDir.resolve(reportName).toAbsolutePath()
 
-        log.info("Writing missing inputs report to $reportFile")
+        log.info("Writing $reportName report to $reportFile")
         Files.write(reportFile, sb.toString().toByteArray())
+    }
 
-        log.warn("Non-reproducible inputs:\n${sb.toString().trim()}")
+    override suspend fun dump(context: ExplorationContext) {
+        writeReport(notReachedTerminals, missedInputs)
+        writeReport(reachedTerminals, reachedInputs)
     }
 }

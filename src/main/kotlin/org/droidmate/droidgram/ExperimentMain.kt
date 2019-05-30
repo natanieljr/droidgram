@@ -22,7 +22,7 @@ object ExperimentMain {
     private fun extraCmdOptions() = arrayOf(
         CommandLineOption(
             CommandLineConfig.inputs,
-            description = "Path to a file with all inputs produced by the grammar (one input per line)",
+            description = "Path to a directory with all inputs files to be consumed. Files should be named 'inputs*.txt'. Each file should contain 1 input per line",
             short = "i",
             metavar = "Path"
         ),
@@ -38,7 +38,7 @@ object ExperimentMain {
      * Validate input arguments and return path to input file and translation table
      */
     @Throws(IllegalArgumentException::class)
-    private fun preprocessCustomInputs(cfg: ConfigurationWrapper): Pair<Path, Path> {
+    private fun preprocessCustomInputs(cfg: ConfigurationWrapper): Pair<List<Path>, Path> {
         if (!cfg.contains(CommandLineConfig.inputs)) {
             throw IllegalArgumentException("Input file not set. Use -i <PATH> to set the path")
         }
@@ -47,19 +47,21 @@ object ExperimentMain {
             throw IllegalArgumentException("Translation table file not set. Use -m <PATH> to set the path")
         }
 
-        val inputFile = Paths.get(cfg[CommandLineConfig.inputs].path).toAbsolutePath()
+        val inputDir = Paths.get(cfg[CommandLineConfig.inputs].path).toAbsolutePath()
 
-        if (!Files.exists(inputFile)) {
-            throw IllegalArgumentException("Input file $inputFile does not exist")
+        if (!Files.isDirectory(inputDir)) {
+            throw IllegalArgumentException("Input directory $inputDir does not exist")
         }
+
+        val inputFiles = getInputFiles(inputDir)
 
         val translationTable = Paths.get(cfg[CommandLineConfig.translation].path).toAbsolutePath()
 
-        if (!Files.exists(inputFile)) {
+        if (!Files.exists(inputDir)) {
             throw IllegalArgumentException("Translation table file $translationTable does not exist")
         }
 
-        return Pair(inputFile, translationTable)
+        return Pair(inputFiles, translationTable)
     }
 
     private fun getInputs(inputFile: Path): List<String> {
@@ -87,6 +89,14 @@ object ExperimentMain {
 
                 Pair(id, uuid)
             }.toMap()
+    }
+
+    private fun getInputFiles(path: Path): List<Path> {
+        return Files.walk(path)
+            .filter { it.fileName.toString().startsWith("input")
+                    && it.fileName.toString().endsWith(".txt") }
+            .toList()
+            .sorted()
     }
 
     private fun getReachedElementsFiles(path: Path): List<Path> {
@@ -119,28 +129,34 @@ object ExperimentMain {
     @JvmStatic
     fun main(args: Array<String>) {
         runBlocking {
-            val cfg = ExplorationAPI.config(args, *extraCmdOptions())
+            val mainCfg = ExplorationAPI.config(args, *extraCmdOptions())
 
-            val data = preprocessCustomInputs(cfg)
+            val data = preprocessCustomInputs(mainCfg)
 
-            val inputFile = data.first
+            val inputFiles = data.first
             val translationTableFile = data.second
 
-            log.info("Reading inputs from: $inputFile")
             log.info("Reading translation table from: $translationTableFile")
 
-            val inputValues = getInputs(inputFile)
-            val translationTable = getTranslationTable(translationTableFile)
-            val terminals = getTerminals(inputValues)
+            inputFiles.forEachIndexed { seed, inputFile ->
+                val seedArgs = arrayOf("--Output-outputDir=out/seed$seed", *args)
+                val seedCfg = ExplorationAPI.config(seedArgs, *extraCmdOptions())
 
-            inputValues.forEachIndexed { index, input ->
-                val experimentArgs = arrayOf("--Output-outputDir=out/$index", *args)
+                log.info("Reading inputs from: $inputFile")
 
-                val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
-                GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, translationTable)
+                val inputValues = getInputs(inputFile)
+                val translationTable = getTranslationTable(translationTableFile)
+                val terminals = getTerminals(inputValues)
+
+                inputValues.forEachIndexed { index, input ->
+                    val experimentArgs = arrayOf("--Output-outputDir=out/seed$seed/input$index", *args)
+
+                    val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
+                    GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, translationTable)
+                }
+
+                calculateGrammarCoverage(terminals, seedCfg)
             }
-
-            calculateGrammarCoverage(terminals, cfg)
         }
     }
 }

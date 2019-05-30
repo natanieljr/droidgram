@@ -27,7 +27,7 @@ data class GrammarInput(val grammarId: String, val widget: UUID, val action: Str
                 ""
             }
 
-            return GrammarInput(widget, translationTable.getUID(widget), action, textualData)
+            return GrammarInput(input, translationTable.getUID(widget), action, textualData)
         }
 
         fun createFetch(target: GrammarInput): GrammarInput {

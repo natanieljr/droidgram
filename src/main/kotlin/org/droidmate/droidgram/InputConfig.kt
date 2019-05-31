@@ -10,7 +10,7 @@ import java.util.UUID
 import kotlin.streams.toList
 
 class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: ConfigurationWrapper) {
-    val inputDir = Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath()
+    val inputDir: Path = Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath()
 
     init {
         if (!cfg.contains(CommandLineConfig.inputDir)) {
@@ -79,7 +79,7 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
             .toList()
             .firstOrNull()
 
-        file ?: throw IllegalArgumentException("Input directory doesn't contain an instrumentatin file (*.json)")
+        file ?: throw IllegalArgumentException("Input directory doesn't contain an instrumentation file (*.json)")
     }
 
     val coverage: Set<Long> by lazy {

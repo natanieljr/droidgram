@@ -28,9 +28,10 @@ object ExperimentMain {
     )
 
     private fun getTerminals(inputs: List<String>): Set<String> {
-        return inputs.flatMap {
-            it.split(" ")
-                .filter { it.isNotEmpty() }
+        return inputs.flatMap { input ->
+            input.split(" ").filter {
+                it.isNotEmpty()
+            }
         }.toSet()
     }
 

@@ -90,7 +90,7 @@ class GrammarExtractor(private val mModelDir: Path) {
                 val productionRule = "$terminal $nonTerminal"
 
                 grammar.addRule(sourceStateNonTerminal, productionRule)
-                grammar.addRule(productionRule, resultStateNonTerminal)
+                grammar.addRule(nonTerminal, resultStateNonTerminal)
             } else if (action == ActionType.Terminate.name) {
                 val productionRule = "<$action($sourceStateUID)>"
 

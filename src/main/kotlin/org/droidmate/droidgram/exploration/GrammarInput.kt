@@ -45,5 +45,7 @@ data class GrammarInput(val grammarId: String, val widget: UUID, val action: Str
 
     fun isTick(): Boolean = action == Tick.name
 
+    fun isBack(): Boolean = action == ActionType.PressBack.name
+
     fun isTextInsert(): Boolean = action == TextInsert.name
 }

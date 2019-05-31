@@ -1,5 +1,7 @@
 package org.droidmate.droidgram.mining
 
+import org.droidmate.deviceInterface.exploration.ActionType
+import org.droidmate.deviceInterface.exploration.LaunchApp
 import org.droidmate.droidgram.grammar.Grammar
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -79,15 +81,17 @@ class GrammarExtractor(private val mModelDir: Path) {
             val resultState = data[3].getId("s")
             val resultStateNonTerminal = "<$resultState>"
 
-            if (action == "LaunchApp") {
+            if (action == LaunchApp.name) {
                 grammar.addRule("<start>", resultStateNonTerminal)
                 grammar.addRule(sourceStateNonTerminal, "<empty>")
-            } else if (action == "PressBack") {
-                val productionRule = "<$action($sourceStateUID)>"
+            } else if (action == ActionType.PressBack.name) {
+                val terminal = "$action($sourceStateUID)"
+                val nonTerminal = "<$action($sourceStateUID)>"
+                val productionRule = "$terminal $nonTerminal"
 
                 grammar.addRule(sourceStateNonTerminal, productionRule)
                 grammar.addRule(productionRule, resultStateNonTerminal)
-            } else if (action == "Terminate") {
+            } else if (action == ActionType.Terminate.name) {
                 val productionRule = "<$action($sourceStateUID)>"
 
                 grammar.addRule(sourceStateNonTerminal, productionRule)

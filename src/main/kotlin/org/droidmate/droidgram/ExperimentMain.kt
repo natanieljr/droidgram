@@ -94,8 +94,8 @@ object ExperimentMain {
 
     private fun getInputFiles(path: Path): List<Path> {
         return Files.walk(path)
-            .filter { it.fileName.toString().startsWith("input")
-                    && it.fileName.toString().endsWith(".txt") }
+            .filter { it.fileName.toString().startsWith("input") &&
+                    it.fileName.toString().endsWith(".txt") }
             .toList()
             .sorted()
     }
@@ -150,6 +150,7 @@ object ExperimentMain {
             log.info("Reading translation table from: $translationTableFile")
 
             inputFiles.forEachIndexed { seed, inputFile ->
+
                 val seedArgs = arrayOf("--Output-outputDir=out/seed$seed", *args)
                 val seedCfg = ExplorationAPI.config(seedArgs, *extraCmdOptions())
 

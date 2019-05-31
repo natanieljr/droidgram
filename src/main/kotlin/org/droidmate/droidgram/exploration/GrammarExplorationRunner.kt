@@ -2,6 +2,7 @@ package org.droidmate.droidgram.exploration
 
 import org.droidmate.api.ExplorationAPI
 import org.droidmate.command.ExploreCommandBuilder
+import org.droidmate.configuration.ConfigProperties
 import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.device.android_sdk.Apk
 import org.droidmate.exploration.SelectorFunction
@@ -28,7 +29,7 @@ object GrammarExplorationRunner {
 
         val builder = ExploreCommandBuilder.fromConfig(cfg)
             .insertBefore(StrategySelector.startExplorationReset, "Grammar", selector)
-            .withStrategy(GrammarStrategy(input, grammarMapping))
+            .withStrategy(GrammarStrategy(input, grammarMapping, cfg[ConfigProperties.Exploration.widgetActionDelay]))
 
         val modelProvider: (String) -> Model = { appName -> CustomModel(ModelConfig(appName, cfg = cfg)) }
         return ExplorationAPI.explore(cfg, commandBuilder = builder, modelProvider = modelProvider)

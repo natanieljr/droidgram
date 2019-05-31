@@ -8,6 +8,7 @@ import org.droidmate.droidgram.exploration.GrammarExplorationRunner
 import org.droidmate.droidgram.exploration.GrammarReplayMF
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.StringBuilder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -122,6 +123,16 @@ object ExperimentMain {
         val difference = missingTerminals.size.toDouble()
 
         log.info("Terminal coverage: ${1 - (difference / terminals.size)}")
+
+        val outputFile = cfg.droidmateOutputDirPath.resolve("grammarCoverage.txt")
+
+        val sb = StringBuilder()
+        sb.appendln("Terminals: $terminals")
+        sb.appendln("Reached: $reachedTerminals")
+        sb.appendln("Missed: $missingTerminals")
+        sb.appendln("Coverage: ${1 - (difference / terminals.size)}")
+
+        Files.write(outputFile, sb.toString().toByteArray())
 
         return difference
     }

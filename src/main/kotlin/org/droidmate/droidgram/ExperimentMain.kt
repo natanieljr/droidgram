@@ -107,7 +107,7 @@ object ExperimentMain {
     }
 
     private fun getReachedTerminals(cfg: ConfigurationWrapper): Set<String> {
-        return getReachedElementsFiles(cfg.droidmateOutputDirPath.parent)
+        return getReachedElementsFiles(cfg.droidmateOutputDirPath)
             .flatMap { Files.readAllLines(it) }
             .filter { it.isNotEmpty() }
             .map { stmt -> stmt.takeWhile { it != ';' } }

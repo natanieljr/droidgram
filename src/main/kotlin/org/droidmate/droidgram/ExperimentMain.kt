@@ -130,6 +130,9 @@ object ExperimentMain {
 
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                     GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
+
+                    calculateGrammarCoverage(terminals, experimentCfg)
+                    calculateCodeCoverage(data.coverage, experimentCfg)
                 }
 
                 calculateGrammarCoverage(terminals, seedCfg)

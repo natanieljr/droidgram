@@ -125,12 +125,12 @@ object ExperimentMain {
 
                 val terminals = getTerminals(inputs)
 
-                /*inputs.forEachIndexed { index, input ->
+                inputs.forEachIndexed { index, input ->
                     val experimentArgs = arrayOf("--Output-outputDir=out/seed$seed/input$index", *args)
 
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                     GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
-                }*/
+                }
 
                 calculateGrammarCoverage(terminals, seedCfg)
                 calculateCodeCoverage(data.coverage, seedCfg)

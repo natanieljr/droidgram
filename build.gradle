@@ -44,8 +44,6 @@ dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0'
 
-    implementation 'org.json:json:20160212'
-    
     compile ("com.github.uds-se.droidmate:droidmate-2:1.3.3-RC1")/* {
         exclude( module: "explorationModel" )
     }

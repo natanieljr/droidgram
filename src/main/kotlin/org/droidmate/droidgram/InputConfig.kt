@@ -2,7 +2,6 @@ package org.droidmate.droidgram
 
 import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.coverage.INSTRUMENTATION_FILE_METHODS_PROP
-import org.json.JSONObject
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -71,26 +70,27 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
             }.toMap()
     }
 
-    private val coverageFile: Path by lazy {
-        val file = Files.walk(inputDir)
-            .filter {
-                it.fileName.toString().endsWith(".json")
-            }
-            .toList()
-            .firstOrNull()
+    private val coverageFiles: List<Path> by lazy {
+        val files = Files.walk(inputDir)
+                .filter { it.fileName.toString().contains("-statements-") }
+                .filter { it.fileName.toString().takeLastWhile { it != '-' }.toLongOrNull() != null }
+                .toList()
 
-        file ?: throw IllegalArgumentException("Input directory doesn't contain an instrumentation file (*.json)")
+        if (files.isEmpty()) {
+            throw IllegalArgumentException("Input directory doesn't contain an instrumentation file (*.json)")
+        } else {
+            files
+        }
     }
 
     val coverage: Set<Long> by lazy {
-        val jsonData = String(Files.readAllBytes(coverageFile))
-        val jObj = JSONObject(jsonData)
+        coverageFiles.flatMap { coverageFile ->
+            val data = Files.readAllLines(coverageFile)
 
-        val jMap = jObj.getJSONObject(INSTRUMENTATION_FILE_METHODS_PROP)
-
-        jMap.keys()
-            .asSequence()
-            .map { it.toLong() }
-            .toSet()
+            data.filter { it.isNotEmpty() }
+                .map { it.takeWhile { char -> char != ';' } }
+                .map { it.toLong() }
+                .toList()
+        }.toSet()
     }
 }

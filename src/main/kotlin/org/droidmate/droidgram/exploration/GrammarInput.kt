@@ -7,6 +7,7 @@ import org.droidmate.deviceInterface.exploration.LongClick
 import org.droidmate.deviceInterface.exploration.LongClickEvent
 import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.Tick
+import org.droidmate.explorationModel.toUUID
 import java.util.UUID
 
 data class GrammarInput(val grammarId: String, val widget: UUID, val action: String, val textualInput: String) {
@@ -14,6 +15,9 @@ data class GrammarInput(val grammarId: String, val widget: UUID, val action: Str
         private fun Map<String, UUID>.getUID(key: String): UUID {
             return this[key] ?: throw IllegalArgumentException("Key $key not found in the translation table")
         }
+
+        val empty: GrammarInput
+            get() = GrammarInput("empty", "empty".toUUID(), "empty", "empty")
 
         fun fromString(input: String, translationTable: Map<String, UUID>): GrammarInput {
             val action = input.split("(").first()

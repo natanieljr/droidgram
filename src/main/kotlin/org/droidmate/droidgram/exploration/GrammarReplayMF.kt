@@ -79,7 +79,11 @@ class GrammarReplayMF(
     fun nextAction(state: State, printLog: Boolean = false): ExplorationAction {
         currIndex++
 
-        val target = inputList[currIndex]
+        val target = if (currIndex >= 0 && currIndex < inputList.size)
+            inputList[currIndex]
+        else
+            GrammarInput.empty
+
         val targetUID = target.widget
         val targetWidget = state.actionableWidgets.firstOrNull { it.uid == targetUID }
 

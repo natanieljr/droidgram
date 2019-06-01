@@ -11,6 +11,8 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
         listOf(className, packageName, isPassword, isKeyboard, xpath).joinToString(separator = "<;>")
     }
 
+    fun isToast(): Boolean = className.contains("Toast")
+
     override fun computeUId(): UUID {
         return when {
             resourceId.isNotBlank() -> resourceId.toUUID()

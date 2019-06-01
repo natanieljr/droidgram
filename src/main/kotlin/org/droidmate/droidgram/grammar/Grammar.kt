@@ -38,6 +38,22 @@ class Grammar @JvmOverloads constructor(
         }
     }
 
+    fun removeSingleStateTransitions() {
+        val singleState = grammar.entries
+            .filter { it.key.contains("(") }
+            .filter { it.value.size == 2 && it.value.any { it != "<empty>" } }
+
+        singleState.forEach { entry ->
+            val oldValue = entry.key
+            val newValue = entry.value.first { it != "<empty>" }
+
+            grammar.replaceAll { _, v ->
+                v.map { it.replace(oldValue, newValue) }.toMutableSet()
+            }
+            grammar.remove(oldValue)
+        }
+    }
+
     fun mergeEquivalentTransitions() {
         val duplicates = grammar.entries
             .groupBy { it.value }

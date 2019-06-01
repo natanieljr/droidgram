@@ -1,7 +1,6 @@
 package org.droidmate.droidgram
 
 import org.droidmate.configuration.ConfigurationWrapper
-import org.droidmate.coverage.INSTRUMENTATION_FILE_METHODS_PROP
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths

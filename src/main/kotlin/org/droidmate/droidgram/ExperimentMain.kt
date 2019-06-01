@@ -43,6 +43,7 @@ object ExperimentMain {
 
     private fun getReachedStatementsFiles(path: Path): List<Path> {
         return Files.walk(path)
+            .filter { it.toAbsolutePath().toString().contains("/coverage/") }
             .filter { it.fileName.toString().contains("-statements-") }
             .toList()
     }

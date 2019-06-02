@@ -115,7 +115,7 @@ class GrammarExtractor(private val mModelDir: Path) {
     private fun postProcessGrammar() {
         grammar.mergeEquivalentTransitions()
         grammar.removeTerminateActions()
-        // grammar.removeSingleStateTransitions()
+        grammar.removeSingleStateTransitions()
     }
 
     val grammar by lazy {

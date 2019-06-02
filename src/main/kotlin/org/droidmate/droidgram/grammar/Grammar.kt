@@ -41,7 +41,7 @@ class Grammar @JvmOverloads constructor(
     fun removeSingleStateTransitions() {
         val singleState = grammar.entries
             .filter { it.key.contains("(") }
-            .filter { it.value.size == 2 && it.value.any { it != "<empty>" } }
+            .filter { it.value.size == 1 && it.value.any { it != "<empty>" } }
 
         singleState.forEach { entry ->
             val oldValue = entry.key
@@ -73,10 +73,10 @@ class Grammar @JvmOverloads constructor(
     }
 
     fun addRule(name: String, item: String) {
-        val emptySet = if (name.contains(".")) {
-            mutableSetOf(emptySymbol)
-        } else {
+        val emptySet = if (name.contains("(")) {
             mutableSetOf()
+        } else {
+            mutableSetOf(emptySymbol)
         }
 
         grammar.getOrPut(name) { emptySet }

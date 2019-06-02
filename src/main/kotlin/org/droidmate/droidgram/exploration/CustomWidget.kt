@@ -7,11 +7,40 @@ import org.droidmate.explorationModel.toUUID
 import java.util.UUID
 
 class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Widget(properties, parentId) {
+    val childrenId: MutableSet<UUID> = mutableSetOf()
+
     private val newUidString by lazy {
         listOf(className, packageName, isPassword, isKeyboard, xpath).joinToString(separator = "<;>")
     }
 
+    private val uidStringWithChildren by lazy {
+        listOf(className, packageName, isPassword, isKeyboard, childrenId.sorted()).joinToString(separator = "<;>")
+    }
+
     fun isToast(): Boolean = className.contains("Toast")
+
+    fun hasValueForId(): Boolean {
+        return when {
+            resourceId.isNotBlank() -> true
+
+            // special care for EditText elements, as the input text will change the [text] property
+            !isKeyboard && isInputField -> when {
+                hintText.isNotBlank() -> true
+                contentDesc.isNotBlank() -> true
+                resourceId.isNotBlank() -> true
+                else -> false
+            }
+
+            !isKeyboard && nlpText.isNotBlank() -> { // compute id from textual nlpText if there is any
+                nlpText.isNotEmpty()
+            }
+
+            childrenId.isNotEmpty() -> true
+
+            // we have an Widget without any visible text
+            else -> false
+        }
+    }
 
     override fun computeUId(): UUID {
         return when {
@@ -26,9 +55,15 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
             }
 
             !isKeyboard && nlpText.isNotBlank() -> { // compute id from textual nlpText if there is any
-                if (nlpText.isNotEmpty()) nlpText.toUUID()
-                else nlpText.toUUID()
+                if (nlpText.isNotEmpty()) {
+                    nlpText.toUUID()
+                }
+                else {
+                    newUidString.toUUID()
+                }
             }
+
+            childrenId.isNotEmpty() -> uidStringWithChildren.toUUID()
 
             // we have an Widget without any visible text
             else -> newUidString.toUUID()

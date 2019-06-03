@@ -121,13 +121,13 @@ object ExperimentMain {
 
             seedList.forEachIndexed { seed, inputs ->
 
-                val seedArgs = arrayOf("--Output-outputDir=out/seed$seed", *args)
+                val seedArgs = arrayOf(*args, "--Output-outputDir=out/seed$seed")
                 val seedCfg = ExplorationAPI.config(seedArgs, *extraCmdOptions())
 
                 val terminals = getTerminals(inputs)
 
                 inputs.forEachIndexed { index, input ->
-                    val experimentArgs = arrayOf("--Output-outputDir=out/seed$seed/input$index", *args)
+                    val experimentArgs = arrayOf(*args, "--Output-outputDir=out/seed$seed/input$index")
 
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                     GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, data.translationTable)

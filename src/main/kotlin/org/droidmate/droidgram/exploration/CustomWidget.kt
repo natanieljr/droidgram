@@ -57,8 +57,7 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
             !isKeyboard && nlpText.isNotBlank() -> { // compute id from textual nlpText if there is any
                 if (nlpText.isNotEmpty()) {
                     nlpText.toUUID()
-                }
-                else {
+                } else {
                     newUidString.toUUID()
                 }
             }

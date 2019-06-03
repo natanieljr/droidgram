@@ -54,6 +54,7 @@ class CustomModel(config: ModelConfig) : Model(config) {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun generateState(action: ActionResult, widgets: Collection<Widget>): State {
         return with(action.guiSnapshot) {
             setChildrenId(widgets as Collection<CustomWidget>)
@@ -64,25 +65,38 @@ class CustomModel(config: ModelConfig) : Model(config) {
     /** used on model update to compute the list of UI elements contained in the current UI screen ([State]).
      *  used by ModelParser to create [Widget] object from persisted data
      */
-    override fun generateWidgets(elements: Map<Int, UiElementPropertiesI>): Collection<Widget>{
-        val widgets = HashMap<Int,Widget>()
+    override fun generateWidgets(elements: Map<Int, UiElementPropertiesI>): Collection<Widget> {
+        val widgets = HashMap<Int, Widget>()
         val workQueue = LinkedList<UiElementPropertiesI>().apply {
-            addAll(elements.values.filter { it.parentHash == 0 })  // add all roots to the work queue
+            addAll(elements.values.filter { it.parentHash == 0 }) // add all roots to the work queue
         }
-        check(elements.isEmpty() || workQueue.isNotEmpty()){"ERROR we don't have any roots something went wrong on UiExtraction"}
-        while (workQueue.isNotEmpty()){
-            with(workQueue.pollFirst()){
-                val parent = if(parentHash != 0) widgets[parentHash]!!.parentHash else null
+        check(elements.isEmpty() || workQueue.isNotEmpty()) { "ERROR we don't have any roots something went wrong on UiExtraction" }
+        while (workQueue.isNotEmpty()) {
+            with(workQueue.pollFirst()) {
+                val parent = if (parentHash != 0) widgets[parentHash]!!.parentHash else null
                 widgets[idHash] = createWidget(this, parent)
                 childHashes.forEach {
-                    //					check(elements[it]!=null){"ERROR no element with hashId $it in working queue"}
-                    if(elements[it] == null)
+                    // check(elements[it]!=null){"ERROR no element with hashId $it in working queue"}
+                    if (elements[it] == null)
                         logger.warn("could not find child with id $it of widget $this ")
-                    else workQueue.add(elements[it]!!) } //FIXME if null we can try to find element.parentId = this.idHash !IN workQueue as repair function, but why does it happen at all
+                    else workQueue.add(elements[it]!!)
+                } // FIXME if null we can try to find element.parentId = this.idHash !IN workQueue as repair function, but why does it happen at all
             }
         }
-        check(widgets.size==elements.size){"ERROR not all UiElements were generated correctly in the model ${elements.filter { !widgets.containsKey(it.key) }.values}"}
-        assert(elements.all { e -> widgets.values.any { it.idHash == e.value.idHash } }){ "ERROR not all UiElements were generated correctly in the model ${elements.filter { !widgets.containsKey(it.key) }}" }
+        check(widgets.size == elements.size) {
+            "ERROR not all UiElements were generated correctly in the model ${elements.filter {
+                !widgets.containsKey(
+                    it.key
+                )
+            }.values}"
+        }
+        assert(elements.all { e -> widgets.values.any { it.idHash == e.value.idHash } }) {
+            "ERROR not all UiElements were generated correctly in the model ${elements.filter {
+                !widgets.containsKey(
+                    it.key
+                )
+            }}"
+        }
         return widgets.values
     }
 }

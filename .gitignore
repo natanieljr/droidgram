@@ -75,5 +75,6 @@ project/pcComponents/monitor-apk-scaffolding/libs_built/
 project/pcComponents/monitor-apk-scaffolding/src/
 
 # other sources
+input/
 apks/
 buildConstants.properties

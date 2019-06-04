@@ -5,6 +5,7 @@ import kotlinx.coroutines.Job
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.GlobalAction
+import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.clickEvent
@@ -43,6 +44,7 @@ class GrammarReplayMF(
 
     private val inputList by lazy {
         generatedInput
+            .replace(" TO ", "-TO-")
             .split(" ")
             .filter { it.isNotEmpty() }
             .flatMap {
@@ -70,6 +72,15 @@ class GrammarReplayMF(
             input.isTick() -> this.tick(delay, ignoreVisibility = true)
 
             input.isTextInsert() -> this.setText(input.textualInput, ignoreVisibility = true)
+
+            input.isSwipe() -> {
+                val payload = input.textualInput
+                val srcPointStr = payload.split("-TO-").first().trim()
+                val dstPointStr = payload.split("-TO-").last().trim()
+                val srcPoint = Pair(srcPointStr.split(";").first().trim().toInt(), srcPointStr.split(";").last().trim().toInt())
+                val dstPoint = Pair(dstPointStr.split(";").first().trim().toInt(), dstPointStr.split(";").last().trim().toInt())
+                Swipe(srcPoint, dstPoint)
+            }
 
             else -> throw IllegalStateException("Unsupported action type: $input")
         }

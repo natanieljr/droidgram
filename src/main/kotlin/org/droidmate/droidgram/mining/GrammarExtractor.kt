@@ -2,6 +2,8 @@ package org.droidmate.droidgram.mining
 
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.LaunchApp
+import org.droidmate.deviceInterface.exploration.Swipe
+import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.droidgram.grammar.Grammar
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -73,8 +75,10 @@ class GrammarExtractor(private val mModelDir: Path) {
             } else {
                 data[2]
             }
-            val textualData = if (action == "TextInsert") {
+            val textualData = if (action == TextInsert.name) {
                 ",${data.dropLast(1).last()}"
+            } else if (action == "Swipe") {
+                ",${data.dropLast(1).last().replace(",", ";")}"
             } else {
                 ""
             }
@@ -82,28 +86,33 @@ class GrammarExtractor(private val mModelDir: Path) {
             val resultState = data[3].getId("s")
             val resultStateNonTerminal = "<$resultState>"
 
-            if (action == LaunchApp.name) {
-                grammar.addRule("<start>", resultStateNonTerminal)
-                grammar.addRule(sourceStateNonTerminal, "<empty>")
-            } else if (action == ActionType.PressBack.name) {
-                val terminal = "$action($sourceStateUID)"
-                val nonTerminal = "<$action($sourceStateUID)>"
-                val productionRule = "$terminal $nonTerminal"
+            when (action) {
+                LaunchApp.name -> {
+                    grammar.addRule("<start>", resultStateNonTerminal)
+                    grammar.addRule(sourceStateNonTerminal, "<empty>")
+                }
+                ActionType.PressBack.name -> {
+                    val terminal = "$action($sourceStateUID)"
+                    val nonTerminal = "<$action($sourceStateUID)>"
+                    val productionRule = "$terminal $nonTerminal"
 
-                grammar.addRule(sourceStateNonTerminal, productionRule)
-                grammar.addRule(nonTerminal, resultStateNonTerminal)
-            } else if (action == ActionType.Terminate.name) {
-                val productionRule = "<$action($sourceStateUID)>"
+                    grammar.addRule(sourceStateNonTerminal, productionRule)
+                    grammar.addRule(nonTerminal, resultStateNonTerminal)
+                }
+                ActionType.Terminate.name -> {
+                    val productionRule = "<$action($sourceStateUID)>"
 
-                grammar.addRule(sourceStateNonTerminal, productionRule)
-                grammar.addRule(productionRule, "<empty>")
-            } else {
-                val terminal = "$action($widgetUID$textualData)"
-                val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
-                val productionRule = "$terminal $nonTerminal"
+                    grammar.addRule(sourceStateNonTerminal, productionRule)
+                    grammar.addRule(productionRule, "<empty>")
+                }
+                else -> {
+                    val terminal = "$action($widgetUID$textualData)"
+                    val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
+                    val productionRule = "$terminal $nonTerminal"
 
-                grammar.addRule(sourceStateNonTerminal, productionRule)
-                grammar.addRule(nonTerminal, resultStateNonTerminal)
+                    grammar.addRule(sourceStateNonTerminal, productionRule)
+                    grammar.addRule(nonTerminal, resultStateNonTerminal)
+                }
             }
         }
 

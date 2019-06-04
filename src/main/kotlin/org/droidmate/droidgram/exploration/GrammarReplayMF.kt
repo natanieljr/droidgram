@@ -98,7 +98,7 @@ class GrammarReplayMF(
             }
 
             // Sequence of actions is Fetch -> Execute, if the widget is already here, skip the fetch
-            (targetWidget != null) && target.isFetch() -> nextAction(state, false)
+            (targetWidget != null) && (targetWidget.isInteractive) && target.isFetch() -> nextAction(state, false)
 
             // Widget is on screen, interact with it
             (targetWidget != null) -> {

@@ -1,5 +1,9 @@
 package org.droidmate.droidgram.grammar
 
+import java.lang.StringBuilder
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+
 class Grammar @JvmOverloads constructor(
     val startSymbol: String = "<start>",
     private val emptySymbol: String = "<empty>",
@@ -83,15 +87,34 @@ class Grammar @JvmOverloads constructor(
             .add(item)
     }
 
-    fun print() {
-        grammar
+    private fun grammarMap(): Map<String, Set<String>> {
+        return grammar
             .entries
             .sortedBy { it.key }
-            .forEach { entry ->
+            .map { entry ->
                 val key = entry.key
                 val value = entry.value.toSortedSet()
-                println("'${("$key'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],")
+
+                Pair(key, value)
+            }.toMap()
+    }
+
+    fun asJsonStr(): String {
+        val gson = GsonBuilder().setPrettyPrinting().create()
+        val entries = grammarMap()
+        return gson.toJson(entries)
+    }
+
+    fun asString(): String {
+        val sb = StringBuilder()
+        val entries = grammarMap()
+            .forEach { entry ->
+                val key = entry.key
+                val value = entry.value
+                sb.appendln("'${("$key'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],")
             }
+
+        return sb.toString()
     }
 
     // private fun String.nonTerminals() = nonTerminals(nonTerminalRegex)

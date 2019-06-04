@@ -5,6 +5,7 @@ import org.droidmate.deviceInterface.exploration.LaunchApp
 import org.droidmate.droidgram.grammar.Grammar
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.lang.StringBuilder
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.Path
@@ -141,17 +142,32 @@ class GrammarExtractor(private val mModelDir: Path) {
             val inputDir = Paths.get(args.firstOrNull() ?: throw IOException("Missing model dir path"))
                 .toAbsolutePath()
 
+            val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
+                .toAbsolutePath()
+
             val extractor = GrammarExtractor(inputDir)
 
-            println("Grammar:")
-            extractor.grammar.print()
+            val grammarJSON = extractor.grammar.asJsonStr()
+            val grammarFile = outputDir.resolve("grammar.txt")
+            Files.write(grammarFile, grammarJSON.toByteArray())
 
-            println("\nMapping:")
+            val mapping = StringBuilder()
             extractor.mapping
                 .toSortedMap()
                 .forEach { key, value ->
-                    println("\"$key\" to \"$value\", ")
+                    mapping.appendln("$key;$value")
                 }
+
+            val mappingFile = outputDir.resolve("translationTable.txt")
+            Files.write(mappingFile, mapping.toString().toByteArray())
+
+            println("Grammar:")
+            val grammarStr = extractor.grammar.asString()
+            print(grammarStr)
+
+            println("\nMapping: $mappingFile")
+            print(mapping.toString())
+
         }
     }
 }

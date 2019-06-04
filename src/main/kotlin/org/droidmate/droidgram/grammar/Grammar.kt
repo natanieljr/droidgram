@@ -1,8 +1,6 @@
 package org.droidmate.droidgram.grammar
 
-import java.lang.StringBuilder
 import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
 
 class Grammar @JvmOverloads constructor(
     val startSymbol: String = "<start>",
@@ -106,15 +104,12 @@ class Grammar @JvmOverloads constructor(
     }
 
     fun asString(): String {
-        val sb = StringBuilder()
-        val entries = grammarMap()
-            .forEach { entry ->
+        return grammarMap()
+            .map { entry ->
                 val key = entry.key
                 val value = entry.value
-                sb.appendln("'${("$key'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],")
-            }
-
-        return sb.toString()
+                "'${("$key'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],"
+            }.joinToString("\n")
     }
 
     // private fun String.nonTerminals() = nonTerminals(nonTerminalRegex)

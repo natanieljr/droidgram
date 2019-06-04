@@ -2,7 +2,6 @@ package org.droidmate.droidgram.mining
 
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.LaunchApp
-import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.droidgram.grammar.Grammar
 import java.io.FileNotFoundException
@@ -176,7 +175,6 @@ class GrammarExtractor(private val mModelDir: Path) {
 
             println("\nMapping: $mappingFile")
             print(mapping.toString())
-
         }
     }
 }

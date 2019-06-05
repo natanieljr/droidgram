@@ -21,6 +21,8 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
 
     fun hasValueForId(): Boolean {
         return when {
+            isToast() -> false
+
             resourceId.isNotBlank() -> true
 
             // special care for EditText elements, as the input text will change the [text] property

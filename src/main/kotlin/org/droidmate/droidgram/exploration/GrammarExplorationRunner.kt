@@ -31,7 +31,7 @@ object GrammarExplorationRunner {
             .insertBefore(StrategySelector.startExplorationReset, "Grammar", selector)
             .withStrategy(GrammarStrategy(input, grammarMapping, cfg[ConfigProperties.Exploration.widgetActionDelay]))
 
-        val modelProvider: (String) -> Model = { appName -> CustomModel(ModelConfig(appName, cfg = cfg)) }
+        val modelProvider: (String) -> Model = { appName -> Model.emptyModel(ModelConfig(appName, cfg = cfg)) }
         return ExplorationAPI.explore(cfg, commandBuilder = builder, modelProvider = modelProvider)
     }
 }

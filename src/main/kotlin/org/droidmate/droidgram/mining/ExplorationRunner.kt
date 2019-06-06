@@ -2,7 +2,6 @@ package org.droidmate.droidgram.mining
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
-import org.droidmate.droidgram.exploration.CustomModel
 import org.droidmate.explorationModel.Model
 import org.droidmate.explorationModel.config.ModelConfig
 

@@ -12,6 +12,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.BiPredicate
+import kotlin.streams.toList
 
 class GrammarExtractor(private val mModelDir: Path) {
     private val mIdMapping = mutableMapOf<String, String>()
@@ -147,8 +148,12 @@ class GrammarExtractor(private val mModelDir: Path) {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            val inputDir = Paths.get(args.firstOrNull() ?: throw IOException("Missing model dir path"))
-                .toAbsolutePath()
+            val inputDir = (
+                    Files.list(Paths.get(args.firstOrNull()))
+                        .toList()
+                        .sorted()
+                        .firstOrNull { Files.isDirectory(it) } ?: throw IOException("Missing model dir path")
+                    ).toAbsolutePath()
 
             val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
                 .toAbsolutePath()

@@ -72,11 +72,11 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
     private val coverageFiles: List<Path> by lazy {
         val files = Files.walk(inputDir)
                 .filter { it.fileName.toString().contains("-statements-") }
-                .filter { it.fileName.toString().takeLastWhile { it != '-' }.toLongOrNull() != null }
+                .filter { it.fileName.toString().takeLastWhile { p -> p != '-' }.toLongOrNull() != null }
                 .toList()
 
         if (files.isEmpty()) {
-            throw IllegalArgumentException("Input directory doesn't contain an instrumentation file (*.json)")
+            throw IllegalArgumentException("No instrumentation files found")
         } else {
             files
         }

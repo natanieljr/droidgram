@@ -4,8 +4,11 @@ import com.natpryce.konfig.CommandLineOption
 import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
 import org.droidmate.configuration.ConfigurationWrapper
+import org.droidmate.droidgram.ResultBuilder.uniqueSet
 import org.droidmate.droidgram.exploration.GrammarExplorationRunner
 import org.droidmate.droidgram.exploration.GrammarReplayMF
+import org.droidmate.droidgram.mining.ExplorationRunner
+import org.droidmate.droidgram.mining.GrammarExtractor
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.StringBuilder
@@ -27,91 +30,17 @@ object ExperimentMain {
         )
     )
 
-    private fun getTerminals(inputs: List<String>): Set<String> {
-        return inputs.flatMap { input ->
-            input.split(" ").filter {
-                it.isNotEmpty()
-            }
-        }.toSet()
-    }
-
-    private fun getReachedElementsFiles(path: Path): List<Path> {
-        return Files.walk(path)
-            .filter { it.fileName.toString() == GrammarReplayMF.reachedTerminals }
-            .toList()
-    }
-
-    private fun getReachedStatementsFiles(path: Path): List<Path> {
-        return Files.walk(path)
-            .filter { it.toAbsolutePath().toString().contains("/coverage/") }
-            .filter { it.fileName.toString().contains("-statements-") }
-            .toList()
-    }
-
-    private fun getReachedTerminals(cfg: ConfigurationWrapper): Set<String> {
-        return getReachedElementsFiles(cfg.droidmateOutputDirPath)
-            .flatMap { Files.readAllLines(it) }
-            .filter { it.isNotEmpty() }
-            .map { stmt -> stmt.takeWhile { it != ';' } }
-            .toSet()
-    }
-
-    private fun getReachedStatements(cfg: ConfigurationWrapper): Set<Long> {
-        return getReachedStatementsFiles(cfg.droidmateOutputDirPath)
-            .flatMap { Files.readAllLines(it) }
-            .filter { it.isNotEmpty() }
-            .map { stmt -> stmt.takeWhile { it != ';' }.toLong() }
-            .toSet()
-    }
-
-    @JvmStatic
-    private fun calculateCodeCoverage(allStatements: Set<Long>, cfg: ConfigurationWrapper): Double {
-        val coveredStatements = getReachedStatements(cfg)
-
-        val missingStatements = allStatements - coveredStatements
-
-        val difference = missingStatements.size.toDouble()
-
-        log.info("Terminal coverage: ${1 - (difference / coveredStatements.size)}")
-
-        val outputFile = cfg.droidmateOutputDirPath.resolve("codeCoverage.txt")
-
-        val sb = StringBuilder()
-        sb.appendln("Reached: $coveredStatements")
-        sb.appendln("Missed: $missingStatements")
-        sb.appendln("Coverage: ${1 - (difference / coveredStatements.size)}")
-
-        Files.write(outputFile, sb.toString().toByteArray())
-
-        return difference
-    }
-
-    @JvmStatic
-    private fun calculateGrammarCoverage(terminals: Set<String>, cfg: ConfigurationWrapper): Double {
-        val reachedTerminals = getReachedTerminals(cfg)
-
-        val missingTerminals = terminals - reachedTerminals
-
-        val difference = missingTerminals.size.toDouble()
-
-        log.info("Terminal coverage: ${1 - (difference / terminals.size)}")
-
-        val outputFile = cfg.droidmateOutputDirPath.resolve("grammarCoverage.txt")
-
-        val sb = StringBuilder()
-        sb.appendln("Terminals: $terminals")
-        sb.appendln("Reached: $reachedTerminals")
-        sb.appendln("Missed: $missingTerminals")
-        sb.appendln("Coverage: ${1 - (difference / terminals.size)}")
-
-        Files.write(outputFile, sb.toString().toByteArray())
-
-        return difference
-    }
-
     @JvmStatic
     fun main(args: Array<String>) {
         runBlocking {
+            if (args.contains("extract")) {
+                GrammarExtractor.main(args.filterNot { it.contains("extract") }.toTypedArray())
+                System.exit(0)
+            } else if (args.contains("run")) {
+                ExplorationRunner.main(args.filterNot { it.contains("run") }.toTypedArray())
+                System.exit(0)
+            }
+
             val mainCfg = ExplorationAPI.config(args, *extraCmdOptions())
 
             val data = InputConfig(mainCfg)
@@ -125,7 +54,7 @@ object ExperimentMain {
                 val seedArgs = arrayOf(*args, "--Output-outputDir=$seedDir")
                 val seedCfg = ExplorationAPI.config(seedArgs, *extraCmdOptions())
 
-                val terminals = getTerminals(inputs)
+                val terminals = inputs
 
                 inputs.forEachIndexed { index, input ->
                     val experimentDir = seedCfg.droidmateOutputDirPath.resolve("input$index")
@@ -134,12 +63,12 @@ object ExperimentMain {
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                     GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
 
-                    calculateGrammarCoverage(terminals, experimentCfg)
-                    calculateCodeCoverage(data.coverage, experimentCfg)
+                    ResultBuilder.generateGrammarCoverage(terminals, experimentCfg.droidmateOutputDirPath)
+                    ResultBuilder.generateCodeCoverage(data.coverage, experimentCfg.droidmateOutputDirPath)
                 }
 
-                calculateGrammarCoverage(terminals, seedCfg)
-                calculateCodeCoverage(data.coverage, seedCfg)
+                ResultBuilder.generateGrammarCoverage(terminals, seedCfg.droidmateOutputDirPath)
+                ResultBuilder.generateCodeCoverage(data.coverage, seedCfg.droidmateOutputDirPath)
             }
         }
     }

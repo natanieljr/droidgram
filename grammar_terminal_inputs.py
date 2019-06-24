@@ -6,6 +6,7 @@ from fuzzingbook.Grammars import RE_NONTERMINAL, START_SYMBOL, nonterminals
 from fuzzingbook.GrammarFuzzer import all_terminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
+recursion_limit = sys.getrecursionlimit()
 
 def expansion_key(symbol, expansion):
     """Convert (symbol, children) into a key. `children` can be an expansion string or a derivation tree."""
@@ -41,8 +42,20 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         self.last_symbol = ""
         self.last_symbol_count = 0
 
+    def any_possible_expansions(self, node):
+        # Take care with recursion level
+        if get_stack_size() >= recursion_limit:
+            return False
+
+        (symbol, children) = node
+        if children is None:
+            return True
+
+        return any(self.any_possible_expansions(c) for c in children)
+
     def _max_expansion_coverage(self, symbol, max_depth):
-        if max_depth <= 0:
+        # Take care with recursion level
+        if (max_depth <= 0) or (get_stack_size() >= recursion_limit):
             return set()
 
         self._symbols_seen.add(symbol)
@@ -198,6 +211,21 @@ if __name__ == "__main__":
     generate_experiments_inputs(input_d, package, num_inputs)
 
 
+def get_stack_size():
+    """Get stack size for caller's frame.
+
+    %timeit len(inspect.stack())
+    8.86 ms ± 42.5 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+    %timeit get_stack_size()
+    4.17 µs ± 11.5 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+    """
+    size = 2  # current frame and caller's frame always exist
+    while True:
+        try:
+            sys._getframe(size)
+            size += 1
+        except ValueError:
+            return size - 1  # subtract current frame
 
 """
 grammar = {

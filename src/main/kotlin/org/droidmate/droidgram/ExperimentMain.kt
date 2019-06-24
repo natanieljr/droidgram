@@ -3,18 +3,11 @@ package org.droidmate.droidgram
 import com.natpryce.konfig.CommandLineOption
 import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
-import org.droidmate.configuration.ConfigurationWrapper
-import org.droidmate.droidgram.ResultBuilder.uniqueSet
 import org.droidmate.droidgram.exploration.GrammarExplorationRunner
-import org.droidmate.droidgram.exploration.GrammarReplayMF
 import org.droidmate.droidgram.mining.ExplorationRunner
 import org.droidmate.droidgram.mining.GrammarExtractor
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.StringBuilder
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.streams.toList
 
 object ExperimentMain {
     @JvmStatic

@@ -52,7 +52,7 @@ object ResultBuilder {
                 val res = stmt.substringBefore(");").trim() + ")"
 
                 check(res.contains('(')) { "Invalid reached statement $stmt" }
-                check(res.endsWith (')')) { "Invalid reached statement $stmt" }
+                check(res.endsWith(')')) { "Invalid reached statement $stmt" }
 
                 res
             }.toSet()
@@ -105,14 +105,6 @@ object ResultBuilder {
         check(res.coverage in 0.0..1.0) { "Expected terminal coverage between 0 and 1. Found ${res.coverage}" }
 
         return res
-    }
-
-    fun uniqueSet(inputs: List<String>): Set<String> {
-        return inputs.flatMap { input ->
-            input.split(" ").filter {
-                it.isNotEmpty()
-            }
-        }.toSet()
     }
 
     private fun Path.containsDir(dirName: String): Boolean {
@@ -216,7 +208,7 @@ object ResultBuilder {
                     val loc = getTotalLOC(jsonFile)
 
                     val translationTableFile = appInputDir.resolve("translationTable.txt")
-                    check(Files.exists(translationTableFile)) { "Input directory $appInputDir missing translation table file"}
+                    check(Files.exists(translationTableFile)) { "Input directory $appInputDir missing translation table file" }
                     log.debug("Processing translation table file: $translationTableFile")
 
                     val translationTable = Files.readAllLines(translationTableFile)

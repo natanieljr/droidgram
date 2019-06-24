@@ -3,8 +3,7 @@ package org.droidmate.droidgram
 data class Run(val _inputs: List<String>, val grammar: Result<String>, val code: Result<Long>) {
     private val inputs: List<List<String>> by lazy {
         _inputs.map {
-            it.replace(" TO ", "-TO-")
-                .split(" ")
+            it.split(" ")
                 .toList()
         }
     }

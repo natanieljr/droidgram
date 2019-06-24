@@ -78,7 +78,9 @@ class GrammarExtractor(private val mModelDir: Path) {
             val textualData = if (action == TextInsert.name) {
                 ",${data.dropLast(1).last()}"
             } else if (action == "Swipe") {
-                ",${data.dropLast(1).last().replace(",", ";")}"
+                ",${data.dropLast(1).last()
+                    .replace(",", ";")
+                    .replace(" TO ", "TO")}"
             } else {
                 ""
             }

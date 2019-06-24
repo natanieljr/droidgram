@@ -93,8 +93,7 @@ object ResultBuilder {
 
     private fun calculateGrammarCoverage(inputs: List<String>, dir: Path): Result<String> {
         val allTerminals = inputs.flatMap {
-            it.replace(" TO ", "-TO-")
-                .split(" ")
+            it.split(" ")
                 .toList()
         }.toSet()
 

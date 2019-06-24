@@ -44,7 +44,6 @@ class GrammarReplayMF(
 
     private val inputList by lazy {
         generatedInput
-            .replace(" TO ", "-TO-")
             .split(" ")
             .filter { it.isNotEmpty() }
             .flatMap {
@@ -75,8 +74,8 @@ class GrammarReplayMF(
 
             input.isSwipe() -> {
                 val payload = input.textualInput
-                val srcPointStr = payload.split("-TO-").first().trim()
-                val dstPointStr = payload.split("-TO-").last().trim()
+                val srcPointStr = payload.split("TO").first().trim()
+                val dstPointStr = payload.split("TO").last().trim()
                 val srcPoint = Pair(srcPointStr.split(";").first().trim().toInt(), srcPointStr.split(";").last().trim().toInt())
                 val dstPoint = Pair(dstPointStr.split(";").first().trim().toInt(), dstPointStr.split(";").last().trim().toInt())
                 Swipe(srcPoint, dstPoint)

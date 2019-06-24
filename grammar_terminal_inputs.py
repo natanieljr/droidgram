@@ -8,6 +8,24 @@ from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
 recursion_limit = sys.getrecursionlimit()
 
+
+def get_stack_size():
+    """Get stack size for caller's frame.
+
+    %timeit len(inspect.stack())
+    8.86 ms ± 42.5 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+    %timeit get_stack_size()
+    4.17 µs ± 11.5 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+    """
+    size = 2  # current frame and caller's frame always exist
+    while True:
+        try:
+            sys._getframe(size)
+            size += 1
+        except ValueError:
+            return size - 1  # subtract current frame
+
+
 def expansion_key(symbol, expansion):
     """Convert (symbol, children) into a key. `children` can be an expansion string or a derivation tree."""
     if isinstance(expansion, tuple):
@@ -210,22 +228,6 @@ if __name__ == "__main__":
 
     generate_experiments_inputs(input_d, package, num_inputs)
 
-
-def get_stack_size():
-    """Get stack size for caller's frame.
-
-    %timeit len(inspect.stack())
-    8.86 ms ± 42.5 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
-    %timeit get_stack_size()
-    4.17 µs ± 11.5 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-    """
-    size = 2  # current frame and caller's frame always exist
-    while True:
-        try:
-            sys._getframe(size)
-            size += 1
-        except ValueError:
-            return size - 1  # subtract current frame
 
 """
 grammar = {

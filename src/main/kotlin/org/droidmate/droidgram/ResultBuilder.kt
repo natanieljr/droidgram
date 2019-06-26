@@ -66,8 +66,12 @@ object ResultBuilder {
             .toSet()
     }
 
+    private fun getCodeCoverage(allStatements: Set<Long>, dir: Path): Result<Long> {
+        return calculateCodeCoverage(allStatements, dir)
+    }
+
     fun generateCodeCoverage(allStatements: Set<Long>, dir: Path) {
-        val coverage = calculateCodeCoverage(allStatements, dir)
+        val coverage = getCodeCoverage(allStatements, dir)
         val coverageFile = dir.resolve("codeCoverage.txt")
 
         coverage.save(coverageFile)
@@ -88,26 +92,32 @@ object ResultBuilder {
         ResultBuilder.generateGrammarCoverage(listOf(input), dir)
     }
 
+    private fun getGrammarCoverage(allTerminals: List<String>, dir: Path): Result<String> {
+        return calculateGrammarCoverage(allTerminals, dir)
+    }
+
     fun generateGrammarCoverage(allTerminals: List<String>, dir: Path) {
-        val coverage = calculateGrammarCoverage(allTerminals, dir)
+        val coverage = getGrammarCoverage(allTerminals, dir)
         val coverageFile = dir.resolve("grammarCoverage.txt")
 
         coverage.save(coverageFile)
     }
 
-    fun generateInputSize(allTerminals: List<String>, dir: Path) {
-        val inputSize = allTerminals.map {input ->
+    private fun getInputSize(allTerminals: List<String>): List<Int> {
+        return allTerminals.map { input ->
             val inputs = input
                 .split(" ")
                 .filter { it.isNotEmpty() }
 
             inputs.size
         }
+    }
 
+    fun generateInputSize(allTerminals: List<String>, dir: Path) {
+        val inputSize = getInputSize(allTerminals)
         val totalSize = inputSize.sum()
 
         val sb = StringBuilder()
-
         sb.appendln("Total input size: $totalSize")
 
         inputSize.forEachIndexed { idx, size ->
@@ -116,6 +126,47 @@ object ResultBuilder {
 
         val inputSizeFile = dir.resolve("inputSize.txt")
         Files.write(inputSizeFile, sb.toString().toByteArray())
+    }
+
+    fun generateSummary(inputs: List<List<String>>, allStatements: Set<Long>, dir: Path) {
+        val sb = StringBuilder()
+        sb.appendln("Seed\tInput Size\tGrammarReached\tGrammarMissed\tGrammarCov\tCodeReached\tCodeMissed\tCodeCov")
+
+        val allTerminals = inputs.flatten()
+
+        Files.list(dir)
+            .filter { Files.isDirectory(it) }
+            .filter { it.fileName.toString().startsWith("seed") }
+            .sorted()
+            .forEach { seedDir ->
+                log.info("Writing seed ${seedDir.fileName} into summary")
+
+                val grammarCoverage = getGrammarCoverage(allTerminals, seedDir)
+                val codeCoverage = getCodeCoverage(allStatements, seedDir)
+
+                val index = seedDir.fileName.toString().removePrefix("seed").toInt()
+                val inputSize = getInputSize(inputs[index])
+
+                sb.append(index)
+                    .append("\t")
+                    .append(inputSize.average())
+                    .append("\t")
+                    .append(grammarCoverage.reached.size)
+                    .append("\t")
+                    .append(grammarCoverage.missed.size)
+                    .append("\t")
+                    .append(grammarCoverage.coverage)
+                    .append("\t")
+                    .append(codeCoverage.reached.size)
+                    .append("\t")
+                    .append(codeCoverage.missed.size)
+                    .append("\t")
+                    .append(codeCoverage.coverage)
+                    .appendln()
+            }
+
+        val summaryFile = dir.resolve("summary.txt")
+        Files.write(summaryFile, sb.toString().toByteArray())
     }
 
     private fun calculateGrammarCoverage(inputs: List<String>, dir: Path): Result<String> {

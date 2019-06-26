@@ -39,6 +39,7 @@ object ExperimentMain {
             val data = InputConfig(mainCfg)
 
             log.info("Reading inputs from: ${data.inputDir}")
+
             val seedList = data.inputs
 
             seedList.forEachIndexed { seed, inputs ->
@@ -47,11 +48,11 @@ object ExperimentMain {
                 val seedArgs = arrayOf(*args, "--Output-outputDir=$seedDir")
                 val seedCfg = ExplorationAPI.config(seedArgs, *extraCmdOptions())
 
-                val terminals = inputs
-
                 inputs.forEachIndexed { index, input ->
                     val experimentDir = seedCfg.droidmateOutputDirPath.resolve("input$index")
-                    val experimentArgs = arrayOf(*args, "--Output-outputDir=$experimentDir")
+                    val experimentArgs = arrayOf(*args,
+                        "--UiAutomatorServer-imgQuality=10",
+                        "--Output-outputDir=$experimentDir")
 
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                     GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
@@ -62,10 +63,14 @@ object ExperimentMain {
                     ResultBuilder.generateCodeCoverage(data.coverage, experimentCfg.droidmateOutputDirPath)
                 }
 
-                ResultBuilder.generateGrammarCoverage(terminals, seedCfg.droidmateOutputDirPath)
-                ResultBuilder.generateInputSize(terminals, seedCfg.droidmateOutputDirPath)
+                ResultBuilder.generateInputSize(inputs, seedCfg.droidmateOutputDirPath)
+                // Grammar coverage relative to the overall grammar
+                ResultBuilder.generateGrammarCoverage(inputs, seedCfg.droidmateOutputDirPath)
+                // Code coverage relative to the overall grammar
                 ResultBuilder.generateCodeCoverage(data.coverage, seedCfg.droidmateOutputDirPath)
             }
+
+            ResultBuilder.generateSummary(data.inputs, data.coverage, mainCfg.droidmateOutputDirPath)
         }
     }
 }

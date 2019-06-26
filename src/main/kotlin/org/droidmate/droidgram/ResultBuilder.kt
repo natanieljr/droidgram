@@ -170,9 +170,11 @@ object ResultBuilder {
     }
 
     private fun calculateGrammarCoverage(inputs: List<String>, dir: Path): Result<String> {
-        val allTerminals = inputs.flatMap {
+        val allTerminals = inputs
+            .flatMap {
             it.split(" ")
                 .toList()
+                .filter { it.isNotEmpty() }
         }.toSet()
 
         val reached = getReachedTerminals(dir)

@@ -25,7 +25,7 @@ task sourcesJar(type: Jar, dependsOn: "classes") {
 apply plugin: "application"
 
 application {
-    applicationDefaultJvmArgs = ["-ea", "-Dlogback.configurationFile=default-logback.xml"]
+    applicationDefaultJvmArgs = [/*"-ea",*/"-Dlogback.configurationFile=default-logback.xml"]
     mainClassName = "org.droidmate.droidgram.ExperimentMain"
 }
 

@@ -3,22 +3,23 @@ package org.droidmate.droidgram.exploration
 import org.droidmate.deviceInterface.exploration.UiElementPropertiesI
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.interaction.Widget
-import org.droidmate.explorationModel.toUUID
-import java.util.UUID
 
 class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Widget(properties, parentId) {
-    val childrenId: MutableSet<UUID> = mutableSetOf()
+    /* val childrenId: MutableSet<UUID> = mutableSetOf()
 
     private val newUidString by lazy {
         listOf(className, packageName, isPassword, isKeyboard, xpath).joinToString(separator = "<;>")
     }
 
+    /*
     private val uidStringWithChildren by lazy {
         listOf(className, packageName, isPassword, isKeyboard, childrenId.sorted()).joinToString(separator = "<;>")
     }
+    */
 
+    */
     fun isToast(): Boolean = className.contains("Toast")
-
+    /*
     fun hasValueForId(): Boolean {
         return when {
             isToast() -> false
@@ -37,7 +38,7 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
                 nlpText.isNotEmpty()
             }
 
-            childrenId.isNotEmpty() -> true
+            // TODO childrenId.isNotEmpty() -> true
 
             // we have an Widget without any visible text
             else -> false
@@ -64,10 +65,11 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
                 }
             }
 
-            childrenId.isNotEmpty() -> uidStringWithChildren.toUUID()
+            // TODO childrenId.isNotEmpty() -> uidStringWithChildren.toUUID()
 
             // we have an Widget without any visible text
             else -> newUidString.toUUID()
         }
     }
+    */
 }

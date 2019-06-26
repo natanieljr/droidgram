@@ -1,57 +1,54 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+    id "org.jetbrains.kotlin.jvm" version "1.3.21"
 }
 
 apply from: file("${rootProject.projectDir}/ktlint.gradle")
 
-group 'org.droidmate'
-version '1.0-SNAPSHOT'
+group "org.droidmate"
+version "1.0-SNAPSHOT"
 
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    maven { url "https://jitpack.io" }
 }
 
-apply plugin: 'java'
+apply plugin: "java"
 
 task sourcesJar(type: Jar, dependsOn: "classes") {
-    classifier = 'sources'
+    classifier = "sources"
     from sourceSets.main.allJava
     from sourceSets.main.allSource
     from sourceSets.test.allSource
 }
 
-apply plugin: 'application'
+apply plugin: "application"
 
 application {
-    applicationDefaultJvmArgs = ['-ea', '-Dlogback.configurationFile=default-logback.xml']
+    applicationDefaultJvmArgs = ["-ea", "-Dlogback.configurationFile=default-logback.xml"]
     mainClassName = "org.droidmate.droidgram.ExperimentMain"
 }
 
-apply plugin: 'maven'
+apply plugin: "maven"
 
 artifacts {
     archives sourcesJar
 }
 
 dependencies {
-    testImplementation "junit:junit:4.12"
-    testImplementation "org.jetbrains.kotlin:kotlin-test:1.3.21"
+    testImplementation("junit:junit:4.12")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.21")
 
-    implementation 'org.slf4j:slf4j-api:1.7.25'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation 'org.jetbrains.kotlin:kotlin-reflect'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0'
-
-    implementation 'org.json:json:20160212'
-    implementation 'com.google.code.gson:gson:2.8.0'
+    implementation("org.slf4j:slf4j-api:1.7.25")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0")
     
-    compile ("com.github.uds-se.droidmate:droidmate-2:1.3.3-RC1")/* {
-        exclude( module: "explorationModel" )
-    }
+    implementation("org.json:json:20160212")
+    implementation("com.google.code.gson:gson:2.8.0")
 
-    implementation 'com.github.hotzkow:ExplorationModel:dev-SNAPSHOT'*/
+    compile("org.droidmate:droidmate-2:1.3.4-SNAPSHOT")
+    //compile ("com.github.uds-se.droidmate:droidmate-2:1.3.3-RC1")
 }
 
 compileKotlin {

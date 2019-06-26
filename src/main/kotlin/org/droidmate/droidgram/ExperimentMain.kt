@@ -56,11 +56,14 @@ object ExperimentMain {
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                     GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
 
-                    ResultBuilder.generateGrammarCoverage(terminals, experimentCfg.droidmateOutputDirPath)
+                    // Grammar coverage relative to current input
+                    ResultBuilder.generateGrammarCoverage(input, experimentCfg.droidmateOutputDirPath)
+                    // Code coverage relative to the overall grammar
                     ResultBuilder.generateCodeCoverage(data.coverage, experimentCfg.droidmateOutputDirPath)
                 }
 
                 ResultBuilder.generateGrammarCoverage(terminals, seedCfg.droidmateOutputDirPath)
+                ResultBuilder.generateInputSize(terminals, seedCfg.droidmateOutputDirPath)
                 ResultBuilder.generateCodeCoverage(data.coverage, seedCfg.droidmateOutputDirPath)
             }
         }

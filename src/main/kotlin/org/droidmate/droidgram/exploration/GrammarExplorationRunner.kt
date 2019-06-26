@@ -7,8 +7,6 @@ import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.device.android_sdk.Apk
 import org.droidmate.exploration.SelectorFunction
 import org.droidmate.exploration.StrategySelector
-import org.droidmate.explorationModel.Model
-import org.droidmate.explorationModel.config.ModelConfig
 import org.droidmate.misc.FailableExploration
 import java.util.UUID
 
@@ -31,7 +29,7 @@ object GrammarExplorationRunner {
             .insertBefore(StrategySelector.startExplorationReset, "Grammar", selector)
             .withStrategy(GrammarStrategy(input, grammarMapping, cfg[ConfigProperties.Exploration.widgetActionDelay]))
 
-        val modelProvider: (String) -> Model = { appName -> Model.emptyModel(ModelConfig(appName, cfg = cfg)) }
+        val modelProvider = CustomModelProvider()
         return ExplorationAPI.explore(cfg, commandBuilder = builder, modelProvider = modelProvider)
     }
 }

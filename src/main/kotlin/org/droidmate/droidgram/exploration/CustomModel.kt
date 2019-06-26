@@ -1,19 +1,17 @@
 package org.droidmate.droidgram.exploration
 
-import org.droidmate.deviceInterface.exploration.UiElementPropertiesI
-import org.droidmate.explorationModel.ConcreteId
-import org.droidmate.explorationModel.Model
 import org.droidmate.explorationModel.config.ModelConfig
-import org.droidmate.explorationModel.interaction.ActionResult
-import org.droidmate.explorationModel.interaction.State
-import org.droidmate.explorationModel.interaction.Widget
-import org.droidmate.explorationModel.toUUID
-import java.util.HashMap
-import java.util.LinkedList
-import java.util.UUID
+import org.droidmate.explorationModel.factory.AbstractModel
+import org.droidmate.explorationModel.factory.StateFactory
+import org.droidmate.explorationModel.factory.WidgetFactory
 
-class CustomModel(config: ModelConfig) : Model(config) {
+class CustomModel(
+    override val config: ModelConfig,
+    override val stateProvider: StateFactory<CustomState, CustomWidget>,
+    override val widgetProvider: WidgetFactory<CustomWidget>
+) : AbstractModel<CustomState, CustomWidget>() {
 
+    /*
     private fun createWidget(properties: UiElementPropertiesI, parentInt: Int?): Widget {
         val parent = if (parentInt != null) {
             val parentUID = parentInt.toString().toUUID()
@@ -99,4 +97,5 @@ class CustomModel(config: ModelConfig) : Model(config) {
         }
         return widgets.values
     }
+    */
 }

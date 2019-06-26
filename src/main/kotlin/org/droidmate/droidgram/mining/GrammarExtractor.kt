@@ -17,6 +17,7 @@ import kotlin.streams.toList
 class GrammarExtractor(private val mModelDir: Path) {
     private val mIdMapping = mutableMapOf<String, String>()
     private val mGrammar = Grammar()
+    private val mStatesDir = mModelDir.resolve("states")
 
     private fun String.getId(prefix: String): String {
         val uuid = this.split("_").firstOrNull().orEmpty()
@@ -61,6 +62,10 @@ class GrammarExtractor(private val mModelDir: Path) {
         }
     }
 
+    private fun String.isHomeScreen(): Boolean {
+        return Files.exists(mStatesDir.resolve("${this}_HS.csv"))
+    }
+
     private fun extractGrammar() {
         assert(mIdMapping.isEmpty()) { "Grammar cannot be re-generated in the same instance" }
         val trace = getTraceFile(mModelDir)
@@ -70,23 +75,30 @@ class GrammarExtractor(private val mModelDir: Path) {
             val sourceStateUID = data[0].getId("s")
             val sourceStateNonTerminal = "<$sourceStateUID>"
             val action = data[1]
+
             val widgetUID = if (data[2] != "null") {
                 data[2].getId("w")
             } else {
                 data[2]
             }
-            val textualData = if (action == TextInsert.name) {
-                ",${data.dropLast(1).last()}"
-            } else if (action == "Swipe") {
-                ",${data.dropLast(1).last()
+
+            val textualData = when (action) {
+                TextInsert.name -> ",${data.dropLast(1).last()}"
+
+                "Swipe" -> ",${data.dropLast(1).last()
                     .replace(",", ";")
                     .replace(" TO ", "TO")}"
-            } else {
-                ""
+
+                else -> ""
             }
 
-            val resultState = data[3].getId("s")
-            val resultStateNonTerminal = "<$resultState>"
+            val resultStateConcreteId = data[3]
+            val resultState = resultStateConcreteId.getId("s")
+            val resultStateNonTerminal = if (resultStateConcreteId.isHomeScreen()) {
+                ""
+            } else {
+                "<$resultState>"
+            }
 
             when (action) {
                 LaunchApp.name -> {

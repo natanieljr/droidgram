@@ -12,6 +12,6 @@ class GrammarStrategy(generatedInput: String, grammarMapping: Map<String, UUID>,
     }
 
     override suspend fun internalDecide(): ExplorationAction {
-        return grammarWatcher.nextAction(currentState, true)
+        return grammarWatcher.nextAction(currentState as CustomState, true)
     }
 }

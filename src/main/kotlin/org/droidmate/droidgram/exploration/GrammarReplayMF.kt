@@ -17,8 +17,6 @@ import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.actions.terminateApp
 import org.droidmate.exploration.actions.tick
 import org.droidmate.exploration.modelFeatures.ModelFeature
-import org.droidmate.explorationModel.interaction.State
-import org.droidmate.explorationModel.interaction.Widget
 import java.lang.IllegalStateException
 import java.nio.file.Files
 import java.util.UUID
@@ -37,7 +35,7 @@ class GrammarReplayMF(
     override val coroutineContext: CoroutineContext = CoroutineName("GrammarReplayMF") + Job()
 
     private var currIndex: Int = -2
-    private lateinit var context: ExplorationContext
+    private lateinit var context: ExplorationContext<CustomModel, CustomState, CustomWidget>
 
     private val missedInputs = mutableListOf<GrammarInput>()
     private val reachedInputs = mutableListOf<GrammarInput>()
@@ -54,11 +52,12 @@ class GrammarReplayMF(
             }
     }
 
-    override fun onAppExplorationStarted(context: ExplorationContext) {
-        this.context = context
+    @Suppress("UNCHECKED_CAST")
+    override fun onAppExplorationStarted(context: ExplorationContext<*, *, *>) {
+        this.context = context as ExplorationContext<CustomModel, CustomState, CustomWidget>
     }
 
-    private fun Widget.toAction(): ExplorationAction {
+    private fun CustomWidget.toAction(): ExplorationAction {
         val input = inputList[currIndex]
 
         return when {
@@ -86,7 +85,7 @@ class GrammarReplayMF(
     }
 
     @JvmOverloads
-    fun nextAction(state: State, printLog: Boolean = false): ExplorationAction {
+    fun nextAction(state: CustomState, printLog: Boolean = false): ExplorationAction {
         currIndex++
 
         val target = if (currIndex >= 0 && currIndex < inputList.size)
@@ -96,6 +95,7 @@ class GrammarReplayMF(
 
         val targetUID = target.widget
         val targetWidget = state.actionableWidgets.firstOrNull { it.uid == targetUID }
+        val currState = context.getCurrentState()
 
         val action = when {
             currIndex < 0 -> context.resetApp()
@@ -105,6 +105,13 @@ class GrammarReplayMF(
             target.isBack() -> {
                 reachedInputs.add(target)
                 context.pressBack()
+            }
+
+            // Left the app for some reason (crash, exit, etc)
+            !currState.hasActionableWidgets || currState.isHomeScreen -> {
+                log.warn("Exploration is outside of the app. Restarting the app to try to continue")
+                currIndex--
+                context.resetApp()
             }
 
             // Sequence of actions is Fetch -> Execute, if the widget is already here, skip the fetch
@@ -148,7 +155,7 @@ class GrammarReplayMF(
         Files.write(reportFile, sb.toString().toByteArray())
     }
 
-    override suspend fun dump(context: ExplorationContext) {
+    override suspend fun dump(context: ExplorationContext<*, *, *>) {
         writeReport(notReachedTerminals, missedInputs)
         writeReport(reachedTerminals, reachedInputs)
     }

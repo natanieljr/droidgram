@@ -84,11 +84,38 @@ object ResultBuilder {
         return res
     }
 
+    fun generateGrammarCoverage(input: String, dir: Path) {
+        ResultBuilder.generateGrammarCoverage(listOf(input), dir)
+    }
+
     fun generateGrammarCoverage(allTerminals: List<String>, dir: Path) {
         val coverage = calculateGrammarCoverage(allTerminals, dir)
         val coverageFile = dir.resolve("grammarCoverage.txt")
 
         coverage.save(coverageFile)
+    }
+
+    fun generateInputSize(allTerminals: List<String>, dir: Path) {
+        val inputSize = allTerminals.map {input ->
+            val inputs = input
+                .split(" ")
+                .filter { it.isNotEmpty() }
+
+            inputs.size
+        }
+
+        val totalSize = inputSize.sum()
+
+        val sb = StringBuilder()
+
+        sb.appendln("Total input size: $totalSize")
+
+        inputSize.forEachIndexed { idx, size ->
+            sb.appendln("$idx\t$size")
+        }
+
+        val inputSizeFile = dir.resolve("inputSize.txt")
+        Files.write(inputSizeFile, sb.toString().toByteArray())
     }
 
     private fun calculateGrammarCoverage(inputs: List<String>, dir: Path): Result<String> {

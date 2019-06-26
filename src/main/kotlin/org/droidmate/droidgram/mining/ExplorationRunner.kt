@@ -2,8 +2,7 @@ package org.droidmate.droidgram.mining
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
-import org.droidmate.explorationModel.Model
-import org.droidmate.explorationModel.config.ModelConfig
+import org.droidmate.droidgram.exploration.CustomModelProvider
 
 object ExplorationRunner {
     @JvmStatic
@@ -11,7 +10,7 @@ object ExplorationRunner {
         runBlocking {
             val cfg = ExplorationAPI.config(args)
 
-            val modelProvider: (String) -> Model = { appName -> Model.emptyModel(ModelConfig(appName, cfg = cfg)) }
+            val modelProvider = CustomModelProvider()
             ExplorationAPI.explore(cfg, modelProvider = modelProvider)
         }
     }

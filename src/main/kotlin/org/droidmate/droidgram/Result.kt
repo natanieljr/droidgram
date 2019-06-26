@@ -11,7 +11,7 @@ data class Result<T>(val originalInputs: List<T>, private val _reached: Set<T>, 
         private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
     }
 
-    private val reached: Set<T> by lazy {
+    val reached: Set<T> by lazy {
         val res = _reached
             .filter { originalInputs.contains(it) }
             .toSet()
@@ -25,7 +25,7 @@ data class Result<T>(val originalInputs: List<T>, private val _reached: Set<T>, 
         res
     }
 
-    private val missed: Set<T> by lazy {
+    val missed: Set<T> by lazy {
         val res = _missed
             .filter { originalInputs.contains(it) }
             .toSet()
@@ -52,8 +52,11 @@ data class Result<T>(val originalInputs: List<T>, private val _reached: Set<T>, 
     fun save(outputFile: Path) {
         val sb = StringBuilder()
         sb.appendln("Coverage: $coverage")
-        sb.appendln("Reached: $reached")
-        sb.appendln("Missed: $missed")
+            .appendln("NrReached: ${reached.size}")
+            .appendln("NrMissed: ${missed.size}")
+            .appendln("")
+            .appendln("Reached: ${reached.joinToString(" ")}")
+            .appendln("Missed: ${missed.joinToString(" ")}")
 
         Files.write(outputFile, sb.toString().toByteArray())
     }

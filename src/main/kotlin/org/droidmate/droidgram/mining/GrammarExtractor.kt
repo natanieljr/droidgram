@@ -3,7 +3,10 @@ package org.droidmate.droidgram.mining
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.LaunchApp
 import org.droidmate.deviceInterface.exploration.TextInsert
+import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.droidgram.grammar.Grammar
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.lang.StringBuilder
@@ -19,8 +22,12 @@ class GrammarExtractor(private val mModelDir: Path) {
     private val mGrammar = Grammar()
     private val mStatesDir = mModelDir.resolve("states")
 
+    private fun String.getUUID(): String {
+        return this.split("_").firstOrNull().orEmpty()
+    }
+
     private fun String.getId(prefix: String): String {
-        val uuid = this.split("_").firstOrNull().orEmpty()
+        val uuid = this.getUUID()
 
         return if (uuid.isEmpty()) {
             ""
@@ -66,23 +73,96 @@ class GrammarExtractor(private val mModelDir: Path) {
         return Files.exists(mStatesDir.resolve("${this}_HS.csv"))
     }
 
+    private fun String.belongsToApp(): Boolean {
+        if (this.isHomeScreen()) {
+            return false
+        }
+
+        val stateFile = mStatesDir.resolve("$this.csv")
+        check(Files.exists(stateFile)) { "File for state $this does not exist in $mStatesDir" }
+
+        val apkName = mModelDir.fileName.toString()
+        val itemsFromApp = Files.readAllLines(stateFile)
+            .count { it.contains(apkName) }
+
+        return itemsFromApp > 0
+    }
+
+    private fun createProduction(
+        action: String,
+        sourceStateConcreteId: String,
+        resultStateConcreteId: String,
+        widgetId: String,
+        textualData: String
+    ) {
+        val sourceStateUID = sourceStateConcreteId.getId("s")
+        val sourceStateNonTerminal = "<$sourceStateUID>"
+
+        val resultState = if (resultStateConcreteId.belongsToApp()) {
+            resultStateConcreteId.getId("s")
+        } else {
+            ""
+        }
+
+        val widgetUID = if (widgetId != "null") {
+            widgetId.getId("w")
+        } else {
+            widgetId
+        }
+
+        val resultStateNonTerminal = if (resultState.isEmpty() || resultStateConcreteId.isHomeScreen()) {
+            ""
+        } else {
+            "<$resultState>"
+        }
+
+        check(resultStateNonTerminal != "<>") { "Invalid result state terminal" }
+
+        when (action) {
+            LaunchApp.name -> {
+                mGrammar.addRule("<start>", resultStateNonTerminal)
+                mGrammar.addRule(sourceStateNonTerminal, "<empty>")
+            }
+            ActionType.PressBack.name -> {
+                val terminal = "$action($sourceStateUID)"
+                val nonTerminal = "<$action($sourceStateUID)>"
+                val productionRule = "$terminal $nonTerminal"
+
+                mGrammar.addRule(sourceStateNonTerminal, productionRule)
+                mGrammar.addRule(nonTerminal, resultStateNonTerminal)
+            }
+            ActionType.Terminate.name -> {
+                val productionRule = "<$action($sourceStateUID)>"
+
+                mGrammar.addRule(sourceStateNonTerminal, productionRule)
+                mGrammar.addRule(productionRule, "<empty>")
+            }
+            else -> {
+                val terminal = "$action($widgetUID$textualData)"
+                val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
+                val productionRule = "$terminal $nonTerminal"
+
+                mGrammar.addRule(sourceStateNonTerminal, productionRule)
+                mGrammar.addRule(nonTerminal, resultStateNonTerminal)
+            }
+        }
+    }
+
     private fun extractGrammar() {
         assert(mIdMapping.isEmpty()) { "Grammar cannot be re-generated in the same instance" }
         val trace = getTraceFile(mModelDir)
 
-        trace.forEach { entry ->
+        var previousSourceStateConcreteId = ""
+
+        trace.forEachIndexed { idx, entry ->
             val data = entry.split(";")
-            val sourceStateUID = data[0].getId("s")
-            val sourceStateNonTerminal = "<$sourceStateUID>"
+            val sourceStateConcreteId = data[0]
             val action = data[1]
 
-            val widgetUID = if (data[2] != "null") {
-                data[2].getId("w")
-            } else {
-                data[2]
-            }
+            val widgetId = data[2]
+            val resultStateConcreteId = data[3]
 
-            val textualData = when (action) {
+            val payload = when (action) {
                 TextInsert.name -> ",${data.dropLast(1).last()}"
 
                 "Swipe" -> ",${data.dropLast(1).last()
@@ -92,41 +172,22 @@ class GrammarExtractor(private val mModelDir: Path) {
                 else -> ""
             }
 
-            val resultStateConcreteId = data[3]
-            val resultState = resultStateConcreteId.getId("s")
-            val resultStateNonTerminal = if (resultStateConcreteId.isHomeScreen()) {
-                ""
+            // Create only if action was in the app or is launch/back
+            if (action.isLaunchApp() || sourceStateConcreteId.belongsToApp()) {
+                // If state was already used on the right side of an expression, it can be used.
+                // Otherwise append to previous
+                val sourceId = if (mIdMapping.containsKey(sourceStateConcreteId.getUUID())) {
+                    sourceStateConcreteId
+                } else {
+                    previousSourceStateConcreteId
+                }
+
+                check(action.isLaunchApp() || sourceId.isNotEmpty()) { "No source id identified for entry $entry" }
+
+                createProduction(action, sourceId, resultStateConcreteId, widgetId, payload)
+                previousSourceStateConcreteId = sourceId
             } else {
-                "<$resultState>"
-            }
-
-            when (action) {
-                LaunchApp.name -> {
-                    grammar.addRule("<start>", resultStateNonTerminal)
-                    grammar.addRule(sourceStateNonTerminal, "<empty>")
-                }
-                ActionType.PressBack.name -> {
-                    val terminal = "$action($sourceStateUID)"
-                    val nonTerminal = "<$action($sourceStateUID)>"
-                    val productionRule = "$terminal $nonTerminal"
-
-                    grammar.addRule(sourceStateNonTerminal, productionRule)
-                    grammar.addRule(nonTerminal, resultStateNonTerminal)
-                }
-                ActionType.Terminate.name -> {
-                    val productionRule = "<$action($sourceStateUID)>"
-
-                    grammar.addRule(sourceStateNonTerminal, productionRule)
-                    grammar.addRule(productionRule, "<empty>")
-                }
-                else -> {
-                    val terminal = "$action($widgetUID$textualData)"
-                    val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
-                    val productionRule = "$terminal $nonTerminal"
-
-                    grammar.addRule(sourceStateNonTerminal, productionRule)
-                    grammar.addRule(nonTerminal, resultStateNonTerminal)
-                }
+                log.warn("State $sourceStateConcreteId does not belong to the app. Ignoring it")
             }
         }
 
@@ -137,21 +198,21 @@ class GrammarExtractor(private val mModelDir: Path) {
      * Postprocessing includes: removing duplicate productions, removing terminate state
      */
     private fun postProcessGrammar() {
-        grammar.mergeEquivalentTransitions()
-        grammar.removeTerminateActions()
-        grammar.removeSingleStateTransitions()
+        mGrammar.mergeEquivalentTransitions()
+        mGrammar.removeTerminateActions()
+        mGrammar.removeSingleStateTransitions()
     }
 
     val grammar by lazy {
         if (mIdMapping.isEmpty()) {
-            extractGrammar()
+            throw IllegalStateException("Grammar has not been initialized")
         }
         mGrammar
     }
 
     val mapping by lazy {
         if (mIdMapping.isEmpty()) {
-            extractGrammar()
+            throw IllegalStateException("Grammar has not been initialized")
         }
 
         mIdMapping
@@ -160,6 +221,9 @@ class GrammarExtractor(private val mModelDir: Path) {
     }
 
     companion object {
+        @JvmStatic
+        private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
+
         @JvmStatic
         fun main(args: Array<String>) {
             val inputDir = (
@@ -174,6 +238,7 @@ class GrammarExtractor(private val mModelDir: Path) {
 
             val extractor = GrammarExtractor(inputDir)
 
+            extractor.extractGrammar()
             val grammarJSON = extractor.grammar.asJsonStr()
             val grammarFile = outputDir.resolve("grammar.txt")
             Files.write(grammarFile, grammarJSON.toByteArray())

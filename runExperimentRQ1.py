@@ -89,13 +89,13 @@ class Data():
         try:
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
             process.wait()
-            output = process.stdout
+            output = process.stdout.readlines()
 
             if file_name is not None:
                 with open(join(self.logs_dir, file_name), "w") as f:
                     f.write("Command %s\n" % str(command))
                     f.write("Output:\n")
-                    f.write(output)
+                    f.writelines(output)
                     f.close()
         except Exception as e:
             print(e)

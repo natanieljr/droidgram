@@ -130,6 +130,19 @@ class Data():
                           )
 
     def _start_emulator(self):
+        try:
+            self._try_start_emulator()
+        except:
+            try:
+                self._try_start_emulator()
+            except:
+                try:
+                    self._try_start_emulator()
+                except Exception as e:
+                    print("Error `%s` while starting the emulator" % e)
+                    raise e
+
+    def _try_start_emulator(self):
         command = ["/home/nataniel.borges/android/emulator/emulator-headless "
                    "-avd "
                    " %s "

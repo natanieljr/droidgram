@@ -275,8 +275,8 @@ class Data():
 def run(item):
     try:
         item.start()
-    except Exception:
-        print("Error when running the experiment in %s" % item)
+    except Exception as e:
+        print("Error `%s` when running the experiment in %s" % (str(e), item))
 
 
 if __name__ == "__main__":
@@ -292,4 +292,4 @@ if __name__ == "__main__":
         try:
             item.terminate()
         except Exception as e:
-            print("Error %s stopping AVD in %s" % (str(e), item))
+            print("Error `%s` stopping AVD in %s" % (str(e), item))

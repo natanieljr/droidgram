@@ -121,7 +121,6 @@ class GrammarExtractor(private val mModelDir: Path) {
         when (action) {
             LaunchApp.name -> {
                 mGrammar.addRule("<start>", resultStateNonTerminal)
-                mGrammar.addRule(sourceStateNonTerminal, "<empty>")
             }
             ActionType.PressBack.name -> {
                 val terminal = "$action($sourceStateUID)"

@@ -130,12 +130,29 @@ class Data():
                           )
 
     def _start_emulator(self):
-        command = ["./startEmulator.sh %s " % self.avd_name]
+        android_home = os.environ["ANDROID_HOME"]
+        command = ["%s/emulator/emulator-headless "
+                   "-avd "
+                   " %s "
+                   "-no-audio "
+                   "-no-window "
+                   "-no-snapshot " % (android_home, self.avd_name)]
         print("Running command %s" % str(command))
-        self.emulator_process = subprocess.Popen(command)
+        self.emulator_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
         print("Waiting 60 seconds for the emulator to start")
-        time.sleep(60)
+        time.sleep(10)
+        print("Waiting 50 seconds for the emulator to start")
+        time.sleep(10)
+        print("Waiting 40 seconds for the emulator to start")
+        time.sleep(10)
+        print("Waiting 30 seconds for the emulator to start")
+        time.sleep(10)
+        print("Waiting 20 seconds for the emulator to start")
+        time.sleep(10)
+        print("Waiting 10 seconds for the emulator to start")
+        time.sleep(10)
+        print("Assuming that the emulator has started proceeding")
 
     def _copy_original_apk(self):
         try:

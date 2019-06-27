@@ -85,12 +85,23 @@ class Data():
         except:
             pass
 
-    def _run_command(self, command, file_name):
+    def _run_command(self, command, file_name, log=True):
         print("Running command %s" % str(command))
         try:
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-            process.wait()
-            output = process.stdout.readlines()
+
+            if log:
+                output = []
+                while True:
+                    output_line = process.stdout.readline()
+                    if output_line == '' and process.poll() is not None:
+                        break
+                    if output_line:
+                        output.append(output_line)
+                        print(output_line.strip())
+            else:
+                process.wait()
+                output = process.stdout.readlines()
 
             if file_name is not None:
                 with open(join(self.logs_dir, file_name), "w") as f:
@@ -168,8 +179,8 @@ class Data():
         except:
             pass
 
-        shutil.copyfile(self.apk, self.apk_dir)
-        shutil.copyfile(self.apk, self.apk_dir)
+        shutil.copy(self.apk, self.apk_dir)
+        shutil.copy(self.json, self.apk_dir)
 
     def _clean_output_dir(self):
         try:
@@ -220,7 +231,7 @@ class Data():
                                                          self.output_dir,
                                                          )
                    ]
-        self._run_command(command, "01explore.log")
+        self._run_command(command, "01explore.log", log=True)
 
     def _step1_run_exploration(self):
         self._clean_output_dir()
@@ -238,7 +249,7 @@ class Data():
                                                                  self.grammar_input_dir
                                                                  )
                    ]
-        self._run_command(command, "02extract.log")
+        self._run_command(command, "02extract.log", log=True)
 
     def _step2_extract_grammar(self):
         self._clean_grammar_input_dir()
@@ -251,7 +262,7 @@ class Data():
                    self.avd_name,
                    self.nr_seeds
                    ]
-        self._run_command(command, "03fuzz.log")
+        self._run_command(command, "03fuzz.log", log=True)
 
     def _step4_run_grammar_inputs(self):
         command = ["./gradlew "
@@ -272,7 +283,7 @@ class Data():
                                                                  self.emulator_name
                                                                  )
                    ]
-        self._run_command(command, "04grammar.log")
+        self._run_command(command, "04grammar.log", log=True)
 
     def start(self):
         self._create_avd()

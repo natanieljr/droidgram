@@ -201,27 +201,11 @@ class Data():
             pass
 
     def _run_droidgram_explore(self):
-        # log_file = join(self.logs_dir, "01explore.log")
-        command = ["./gradlew "
-                   "run "
-                   '--args="run '
-                   '--Exploration-apksDir=%s '
-                   '--Exploration-launchActivityDelay=5000 '
-                   '--Exploration-widgetActionDelay=800 '
-                   '--Selectors-actionLimit=%d '
-                   '--Selectors-resetEvery=50 '
-                   '--Selectors-randomSeed=1 '
-                   '--Deploy-installApk=true '
-                   '--Deploy-uninstallApk=true '
-                   '--Selectors-pressBackProbability=0.00 '
-                   '--Exploration-deviceSerialNumber=%s '
-                   '--StatementCoverage-enableCoverage=true '
-                   '--Output-outputDir=%s/droidMate" ' % (self.apk_dir,
-                                                          self.action_limit,
-                                                          self.emulator_name,
-                                                          self.output_dir,
-                                                          # log_file
-                                                          )
+        command = ["./01.sh %s %d %s %s " % (self.apk_dir,
+                                             self.action_limit,
+                                             self.emulator_name,
+                                             self.output_dir,
+                                             )
                    ]
         self._run_command(command, None)
 
@@ -236,12 +220,10 @@ class Data():
 
     def _run_droidgram_extraction(self):
         # log_file = join(self.logs_dir, "02extract.log")
-        command = ["./gradlew "
-                   "run "
-                   '--args="extract %s/droidMate/model/ %s/" ' % (self.grammar_input_dir,
-                                                                  self.grammar_input_dir,
-                                                                  # log_file
-                                                                  )
+        command = ["./02.sh %s %s/" % (self.grammar_input_dir,
+                                       self.grammar_input_dir,
+                                       # log_file
+                                       )
                    ]
         self._run_command(command, None)
 
@@ -262,24 +244,12 @@ class Data():
 
     def _step4_run_grammar_inputs(self):
         log_file = join(self.logs_dir, "04grammar.log")
-        command = ["./gradlew "
-                   "run "
-                   '--args="-i %s '
-                   '--Exploration-apksDir=%s '
-                   '--Output-outputDir=%s '
-                   '--Exploration-launchActivityDelay=3000 '
-                   '--Exploration-widgetActionDelay=800 '
-                   '--Selectors-randomSeed=1 '
-                   '--Deploy-installApk=true '
-                   '--Deploy-uninstallApk=true '
-                   '--Selectors-pressBackProbability=0.00 '
-                   '--Exploration-deviceSerialNumber=%s '
-                   '--StatementCoverage-enableCoverage=true" ' % (self.grammar_input_dir,
-                                                                  self.apk_dir,
-                                                                  self.output_dir,
-                                                                  self.emulator_name,
-                                                                  # log_file
-                                                                  )
+        command = ["./04.sh %s %s %s %s " % (self.grammar_input_dir,
+                                             self.apk_dir,
+                                             self.output_dir,
+                                             self.emulator_name,
+                                             # log_file
+                                             )
                    ]
         self._run_command(command, None)
 

@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 import shutil
+import time
 from os import listdir
 from os.path import isfile, join
 from joblib import Parallel, delayed
@@ -136,8 +137,11 @@ class Data():
                    "-no-window "
                    "-no-snapshot" % self.avd_name
                    ]
+        print("Running command %s" % str(command))
         self.emulator_process = subprocess.Popen(command)
-        # print(str(command))
+
+        print("Waiting 60 seconds for the emulator to start")
+        time.sleep(60)
 
     def _copy_original_apk(self):
         try:

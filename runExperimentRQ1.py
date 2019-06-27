@@ -85,34 +85,21 @@ class Data():
         except:
             pass
 
-    def _run_command(self, command, file_name, log=True):
+    def _run_command(self, command, file_name):
         print("Running command %s" % str(command))
         try:
-            if log:
-                process = subprocess.Popen(command, stdout=subprocess.PIPE)
-            else:
-                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            # process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            # process.wait()
+            os.system(*command)
+            # output = process.stdout.readlines()
 
-            if log:
-                output = []
-                while True:
-                    output_line = process.stdout.readline()
-                    if output_line == '' and process.poll() is not None:
-                        break
-                    if output_line:
-                        output.append(output_line)
-                        print(output_line.strip())
-            else:
-                process.wait()
-                output = process.stdout.readlines()
-
-            if file_name is not None:
-                with open(join(self.logs_dir, file_name), "w") as f:
-                    f.write("Command %s\n" % str(command))
-                    f.write("Output:\n")
-                    for line in output:
-                        f.write(str(line))
-                    f.close()
+            # if file_name is not None:
+            #    with open(join(self.logs_dir, file_name), "w") as f:
+            #        f.write("Command %s\n" % str(command))
+            #        f.write("Output:\n")
+            #        for line in output:
+            #            f.write(str(line))
+            #        f.close()
         except Exception as e:
             print(e)
             print(e.args)
@@ -214,6 +201,7 @@ class Data():
             pass
 
     def _run_droidgram_explore(self):
+        # log_file = join(self.logs_dir, "01explore.log")
         command = ["./gradlew "
                    "run "
                    '--args="run '
@@ -226,15 +214,16 @@ class Data():
                    '--Deploy-installApk=true '
                    '--Deploy-uninstallApk=true '
                    '--Selectors-pressBackProbability=0.00 '
-                   '--Exploration-deviceSerialNumber=%s'
+                   '--Exploration-deviceSerialNumber=%s '
                    '--StatementCoverage-enableCoverage=true '
-                   '--Output-outputDir=%s/droidMate"' % (self.apk_dir,
-                                                         self.action_limit,
-                                                         self.emulator_name,
-                                                         self.output_dir,
-                                                         )
+                   '--Output-outputDir=%s/droidMate" ' % (self.apk_dir,
+                                                          self.action_limit,
+                                                          self.emulator_name,
+                                                          self.output_dir,
+                                                          # log_file
+                                                          )
                    ]
-        self._run_command(command, "01explore.log", log=True)
+        self._run_command(command, None)
 
     def _step1_run_exploration(self):
         self._clean_output_dir()
@@ -246,28 +235,33 @@ class Data():
         shutil.move("%s/droidMate" % self.output_dir, "%s/droidMate" % self.grammar_input_dir)
 
     def _run_droidgram_extraction(self):
-        command = ["./gradlew",
-                   "run",
-                   '--args="extract %s/droidMate/model/ %s/"' % (self.grammar_input_dir,
-                                                                 self.grammar_input_dir
-                                                                 )
+        # log_file = join(self.logs_dir, "02extract.log")
+        command = ["./gradlew "
+                   "run "
+                   '--args="extract %s/droidMate/model/ %s/" ' % (self.grammar_input_dir,
+                                                                  self.grammar_input_dir,
+                                                                  # log_file
+                                                                  )
                    ]
-        self._run_command(command, "02extract.log", log=True)
+        self._run_command(command, None)
 
     def _step2_extract_grammar(self):
         self._clean_grammar_input_dir()
         self._run_droidgram_extraction()
 
     def _step3_fuzz_grammar(self):
-        command = ["python3",
-                   "grammar_terminal_inputs.py",
-                   self.root_grammar_input_dir,
-                   self.avd_name,
-                   self.nr_seeds
+        # log_file = join(self.logs_dir, "03fuzz.log")
+        command = ["python3 "
+                   "grammar_terminal_inputs.py %s %s %d " % (self.root_grammar_input_dir,
+                                                             self.avd_name,
+                                                             self.nr_seeds,
+                                                             # log_file
+                                                             )
                    ]
-        self._run_command(command, "03fuzz.log", log=True)
+        self._run_command(command, None)
 
     def _step4_run_grammar_inputs(self):
+        log_file = join(self.logs_dir, "04grammar.log")
         command = ["./gradlew "
                    "run "
                    '--args="-i %s '
@@ -279,14 +273,15 @@ class Data():
                    '--Deploy-installApk=true '
                    '--Deploy-uninstallApk=true '
                    '--Selectors-pressBackProbability=0.00 '
-                   '--Exploration-deviceSerialNumber=%s'
-                   '--StatementCoverage-enableCoverage=true"' % (self.grammar_input_dir,
-                                                                 self.apk_dir,
-                                                                 self.output_dir,
-                                                                 self.emulator_name
-                                                                 )
+                   '--Exploration-deviceSerialNumber=%s '
+                   '--StatementCoverage-enableCoverage=true" ' % (self.grammar_input_dir,
+                                                                  self.apk_dir,
+                                                                  self.output_dir,
+                                                                  self.emulator_name,
+                                                                  # log_file
+                                                                  )
                    ]
-        self._run_command(command, "04grammar.log", log=True)
+        self._run_command(command, None)
 
     def start(self):
         self._create_avd()

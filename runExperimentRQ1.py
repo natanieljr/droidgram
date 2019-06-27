@@ -1,5 +1,7 @@
 import sys
+import os
 import subprocess
+import shutil
 from os import listdir
 from os.path import isfile, join
 from joblib import Parallel, delayed
@@ -69,9 +71,9 @@ class Data():
         print("Logs dir: %s" % self.logs_dir)
 
     def _clean_logs_dir(self):
-        self._run_command(["rm", "-rf", "%s/*.*" % self.logs_dir], None)
-        self._run_command(["mkdir", self.root_logs_dir], None)
-        self._run_command(["mkdir", self.logs_dir], None)
+        shutil.rmtree(self.logs_dir)
+        os.mkdir(self.root_logs_dir)
+        os.mkdir(self.logs_dir)
 
     def _run_command(self, command, file_name):
         print("Running command %s" % str(command))
@@ -127,22 +129,22 @@ class Data():
         # print(str(command))
 
     def _copy_original_apk(self):
-        self._run_command(["rm", "%s/*.*" % self.apk_dir], None)
-        self._run_command(["mkdir", self.root_apks_dir], None)
-        self._run_command(["mkdir", self.apk_dir], None)
-        self._run_command(["cp", self.apk, "%s/" % self.apk_dir], None)
-        self._run_command(["cp", self.json, "%s/" % self.apk_dir], None)
+        shutil.rmtree(self.apk_dir)
+        os.mkdir(self.root_apks_dir)
+        os.mkdir(self.apk_dir)
+
+        shutil.copyfile(self.apk, self.apk_dir)
+        shutil.copyfile(self.apk, self.apk_dir)
 
     def _clean_output_dir(self):
-        self._run_command(["rm", "-rf", "%s" % self.output_dir], None)
-        self._run_command(["mkdir", self.root_output_dir], None)
-        self._run_command(["mkdir", self.output_dir], None)
+        shutil.rmtree(self.output_dir)
+        os.mkdir(self.root_output_dir)
+        os.mkdir(self.output_dir)
 
     def _clean_grammar_input_dir(self):
-        self._run_command(["rm", "-rf", "%s/droidMate" % self.grammar_input_dir], None)
-        self._run_command(["rm", "-rf", "%s/*.txt" % self.grammar_input_dir], None)
-        self._run_command(["mkdir", self.root_grammar_input_dir], None)
-        self._run_command(["mkdir", self.grammar_input_dir], None)
+        shutil.rmtree(self.grammar_input_dir)
+        os.mkdir(self.root_grammar_input_dir)
+        os.mkdir(self.grammar_input_dir)
 
     def _run_droidgram_explore(self):
         command = ["./gradlew",
@@ -174,11 +176,7 @@ class Data():
         self._run_droidgram_explore()
 
     def _move_exploration_output_to_grammar_input(self):
-        command = ["mv",
-                   "%s/droidMate" % self.output_dir,
-                   self.apk_dir
-                   ]
-        self._run_command(command, None)
+        shutil.move("%s/droidMate" % self.output_dir, "%s/droidMate" % self.grammar_input_dir)
 
     def _run_droidgram_extraction(self):
         command = ["./gradlew",

@@ -130,26 +130,7 @@ class Data():
                           )
 
     def _start_emulator(self):
-        try:
-            self._try_start_emulator()
-        except:
-            try:
-                self._try_start_emulator()
-            except:
-                try:
-                    self._try_start_emulator()
-                except Exception as e:
-                    print("Error `%s` while starting the emulator" % e)
-                    raise e
-
-    def _try_start_emulator(self):
-        command = ["/home/nataniel.borges/android/emulator/emulator-headless "
-                   "-avd "
-                   " %s "
-                   "-no-audio "
-                   "-no-window "
-                   "-no-snapshot" % self.avd_name
-                   ]
+        command = ["./startEmulator.sh %s " % self.avd_name]
         print("Running command %s" % str(command))
         self.emulator_process = subprocess.Popen(command)
 

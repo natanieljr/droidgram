@@ -74,17 +74,21 @@ class Data():
 
     def _run_command(self, command, file_name):
         print("Running command %s" % str(command))
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-        process.wait()
-        output = process.stdout
+        try:
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            process.wait()
+            output = process.stdout
 
-        if file_name is not None:
-            with open(join(self.logs_dir, file_name), "w") as f:
-                f.write("Command %s\n" % str(command))
-                f.write("Output:\n")
-                f.write(output)
-                f.close()
-        # print(str(command))
+            if file_name is not None:
+                with open(join(self.logs_dir, file_name), "w") as f:
+                    f.write("Command %s\n" % str(command))
+                    f.write("Output:\n")
+                    f.write(output)
+                    f.close()
+        except Exception as e:
+            print(e)
+            print(e.args)
+            raise e
 
     def _create_avd(self):
         self._run_command(["avdmanager",
@@ -251,5 +255,5 @@ if __name__ == "__main__":
     for item in data:
         try:
             item.terminate()
-        except Exception:
-            print("Error stopping AVD in %s" % item)
+        except Exception as e:
+            print("Error %s stopping AVD in %s" % (str(e), item))

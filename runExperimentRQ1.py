@@ -54,6 +54,9 @@ class Data():
 
         self.debug()
 
+    def __str__(self):
+        return "Emulator: %s\tAPK %s" % (self.emulator_name, self.apk)
+
     def debug(self):
         print("APK %s\n" % self.apk)
         print("JSON %s\n" % self.json)
@@ -70,6 +73,7 @@ class Data():
         self._run_command(["mkdir", self.logs_dir], None)
 
     def _run_command(self, command, file_name):
+        print("Running command %s" % str(command))
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
         process.wait()
         output = process.stdout

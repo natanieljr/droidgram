@@ -153,7 +153,7 @@ class GrammarExtractor(private val mModelDir: Path) {
 
         var previousSourceStateConcreteId = ""
 
-        trace.forEachIndexed { idx, entry ->
+        trace.forEachIndexed { _, entry ->
             val data = entry.split(";")
             val sourceStateConcreteId = data[0]
             val action = data[1]

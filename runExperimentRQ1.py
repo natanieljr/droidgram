@@ -54,26 +54,35 @@ class Data():
         self.apk_dir = join(self.root_apks_dir, self.avd_name)
         self.logs_dir = join(self.root_logs_dir, self.avd_name)
 
-        self._clean_logs_dir()
         self.debug()
+        self._clean_logs_dir()
 
     def __str__(self):
         return "Emulator: %s\tAPK %s" % (self.emulator_name, self.apk)
 
     def debug(self):
-        print("APK %s\n" % self.apk)
-        print("JSON %s\n" % self.json)
+        print("APK %s" % self.apk)
+        print("JSON %s" % self.json)
         print("Emulator: %s" % self.emulator_name)
-        print("AVD Name: %s" % self.avd_name)
+        print("AVD Name: %s\n" % self.avd_name)
         print("Grammar input dir: %s" % self.grammar_input_dir)
         print("Output dir: %s" % self.output_dir)
         print("APKs dir: %s" % self.apk_dir)
         print("Logs dir: %s" % self.logs_dir)
 
     def _clean_logs_dir(self):
-        shutil.rmtree(self.logs_dir)
-        os.mkdir(self.root_logs_dir)
-        os.mkdir(self.logs_dir)
+        try:
+            shutil.rmtree(self.logs_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.root_logs_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.logs_dir)
+        except:
+            pass
 
     def _run_command(self, command, file_name):
         print("Running command %s" % str(command))
@@ -129,22 +138,49 @@ class Data():
         # print(str(command))
 
     def _copy_original_apk(self):
-        shutil.rmtree(self.apk_dir)
-        os.mkdir(self.root_apks_dir)
-        os.mkdir(self.apk_dir)
+        try:
+            shutil.rmtree(self.apk_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.root_apks_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.apk_dir)
+        except:
+            pass
 
         shutil.copyfile(self.apk, self.apk_dir)
         shutil.copyfile(self.apk, self.apk_dir)
 
     def _clean_output_dir(self):
-        shutil.rmtree(self.output_dir)
-        os.mkdir(self.root_output_dir)
-        os.mkdir(self.output_dir)
+        try:
+            shutil.rmtree(self.output_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.root_output_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.output_dir)
+        except:
+            pass
 
     def _clean_grammar_input_dir(self):
-        shutil.rmtree(self.grammar_input_dir)
-        os.mkdir(self.root_grammar_input_dir)
-        os.mkdir(self.grammar_input_dir)
+        try:
+            shutil.rmtree(self.grammar_input_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.root_grammar_input_dir)
+        except:
+            pass
+        try:
+            os.mkdir(self.grammar_input_dir)
+        except:
+            pass
 
     def _run_droidgram_explore(self):
         command = ["./gradlew",

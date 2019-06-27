@@ -88,7 +88,10 @@ class Data():
     def _run_command(self, command, file_name, log=True):
         print("Running command %s" % str(command))
         try:
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            if log:
+                process = subprocess.Popen(command, stdout=subprocess.PIPE)
+            else:
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
             if log:
                 output = []

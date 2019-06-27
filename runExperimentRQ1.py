@@ -52,6 +52,7 @@ class Data():
         self.apk_dir = join(self.root_apks_dir, self.avd_name)
         self.logs_dir = join(self.root_logs_dir, self.avd_name)
 
+        self._clean_logs_dir()
         self.debug()
 
     def __str__(self):

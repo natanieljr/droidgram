@@ -95,7 +95,8 @@ class Data():
                 with open(join(self.logs_dir, file_name), "w") as f:
                     f.write("Command %s\n" % str(command))
                     f.write("Output:\n")
-                    f.writelines(output)
+                    for line in output:
+                        f.write(str(line))
                     f.close()
         except Exception as e:
             print(e)
@@ -103,36 +104,36 @@ class Data():
             raise e
 
     def _create_avd(self):
-        self._run_command(["avdmanager",
-                           "create",
-                           "avd",
-                           "-n",
-                           self.avd_name,
-                           "-k",
-                           "\"system-images;android-28;google_apis;x86\"",
-                           "-d",
-                           "pixel"
+        self._run_command(["avdmanager "
+                           "create "
+                           "avd "
+                           "-n "
+                           " %s "
+                           "-k "
+                           "\"system-images;android-28;google_apis;x86\" "
+                           "-d "
+                           "pixel " % self.avd_name
                            ],
                           "create_avd.log"
                           )
 
     def _delete_avd(self):
-        self._run_command(["avdmanager",
-                           "delete",
-                           "avd",
-                           "-n",
-                           self.avd_name
+        self._run_command(["avdmanager "
+                           "delete "
+                           "avd "
+                           "-n "
+                           " %s " % self.avd_name
                            ],
                           "delete_avd.log"
                           )
 
     def _start_emulator(self):
-        command = ["/home/nataniel.borges/android/emulator/emulator-headless",
-                   "-avd",
-                   self.avd_name,
-                   "-no-audio",
-                   "-no-window",
-                   "-no-snapshot"
+        command = ["/home/nataniel.borges/android/emulator/emulator-headless "
+                   "-avd "
+                   " %s "
+                   "-no-audio "
+                   "-no-window "
+                   "-no-snapshot" % self.avd_name
                    ]
         self.emulator_process = subprocess.Popen(command)
         # print(str(command))
@@ -183,8 +184,8 @@ class Data():
             pass
 
     def _run_droidgram_explore(self):
-        command = ["./gradlew",
-                   "run",
+        command = ["./gradlew "
+                   "run "
                    '--args="run '
                    '--Exploration-apksDir=%s '
                    '--Exploration-launchActivityDelay=5000 '
@@ -237,8 +238,8 @@ class Data():
         self._run_command(command, "03fuzz.log")
 
     def _step4_run_grammar_inputs(self):
-        command = ["./gradlew"
-                   "run",
+        command = ["./gradlew "
+                   "run "
                    '--args="-i %s '
                    '--Exploration-apksDir=%s '
                    '--Output-outputDir=%s '

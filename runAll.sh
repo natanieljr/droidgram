@@ -7,6 +7,8 @@ DONE_DIR=./done
 NR_SEEDS=1
 ACTION_LIMIT=10
 
+mkdir ${INPUT_DIR}
+
 echo "Cleaning output folder ${OUTPUT_DIR}"
 rm -rf ${OUTPUT_DIR}
 mkdir ${OUTPUT_DIR}

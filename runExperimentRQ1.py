@@ -112,7 +112,8 @@ class Data():
                            "-k "
                            "\"system-images;android-28;google_apis;x86\" "
                            "-d "
-                           "pixel " % self.avd_name
+                           "pixel "
+                           "--force " % self.avd_name
                            ],
                           "create_avd.log"
                           )

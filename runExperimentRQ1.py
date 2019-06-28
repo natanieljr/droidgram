@@ -181,7 +181,7 @@ class Data():
                    "-no-audio "
                    "-no-window "
                    "-no-snapshot " % (android_home, self.avd_name)]
-        print("Running command %s" % str(command))
+        print("Starting emulator with command %s" % str(command))
         self.emulator_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
         print("Waiting 60 seconds for the emulator to start")
@@ -304,6 +304,7 @@ class Data():
         self._create_avd()
         self._start_emulator()
 
+    def execute(self):
         self._step1_run_exploration()
         self._step2_extract_grammar()
         self._step3_fuzz_grammar()
@@ -316,7 +317,7 @@ class Data():
 
 def run(item):
     try:
-        item.start()
+        item.execute()
     except Exception as e:
         print("Error `%s` when running the experiment in %s" % (str(e), item))
 
@@ -327,8 +328,11 @@ if __name__ == "__main__":
 
     data = init_all_experiments(apk_list)
 
+    for item in data:
+        item.start()
+
     num_cores = multiprocessing.cpu_count()
-    results = Parallel(n_jobs=num_cores)(delayed(run)(item) for item in data)
+    results = Parallel(n_jobs=len(data))(delayed(run)(item) for item in data)
 
     for item in data:
         try:

@@ -6,25 +6,6 @@ from fuzzingbook.Grammars import RE_NONTERMINAL, START_SYMBOL, nonterminals
 from fuzzingbook.GrammarFuzzer import all_terminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
-recursion_limit = sys.getrecursionlimit()
-
-
-def get_stack_size():
-    """Get stack size for caller's frame.
-
-    %timeit len(inspect.stack())
-    8.86 ms ± 42.5 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
-    %timeit get_stack_size()
-    4.17 µs ± 11.5 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-    """
-    size = 2  # current frame and caller's frame always exist
-    while True:
-        try:
-            sys._getframe(size)
-            size += 1
-        except ValueError:
-            return size - 1  # subtract current frame
-
 
 def expansion_key(symbol, expansion):
     """Convert (symbol, children) into a key. `children` can be an expansion string or a derivation tree."""
@@ -60,31 +41,47 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         self.last_symbol = ""
         self.last_symbol_count = 0
 
-    def any_possible_expansions(self, node):
-        # Take care with recursion level
-        if get_stack_size() >= recursion_limit:
-            return False
-
-        (symbol, children) = node
-        if children is None:
-            return True
-
-        return any(self.any_possible_expansions(c) for c in children)
-
     def _max_expansion_coverage(self, symbol, max_depth):
-        # Take care with recursion level
-        if (max_depth <= 0) or (get_stack_size() >= recursion_limit):
+        if max_depth <= 0:
             return set()
 
-        self._symbols_seen.add(symbol)
-
         expansions = set()
-        for expansion in self.grammar[symbol]:
-            expansions.add(expansion_key(symbol, expansion))
-            for nonterminal in nonterminals(expansion):
-                if nonterminal not in self._symbols_seen:
-                    expansions |= self._max_expansion_coverage(
-                        nonterminal, max_depth - 1)
+        self._symbols_seen.add(symbol)
+        Q = [symbol]
+
+        curDepth = 0
+        elementsToDepthIncrease = 1
+        nextElementsToDepthIncrease = 0
+
+        while Q != []:
+            current = Q.pop(0)
+            sum = 0
+
+            #process
+            seen_non_terminals = []
+            for expansion in self.grammar[current]:
+                expansions.add(expansion_key(current, expansion))
+                for nonterminal in nonterminals(expansion):
+                    if nonterminal not in self._symbols_seen:
+                        sum += 1
+                        Q.append(nonterminal)
+                        seen_non_terminals.append(nonterminal)
+                        #self._symbols_seen.add(nonterminal) #moved below
+            #end process
+
+            #bookkeeping for iterative BFS with depth limiting
+            nextElementsToDepthIncrease += sum
+            elementsToDepthIncrease -= 1
+            if (elementsToDepthIncrease == 0):
+                curDepth += 1
+                if curDepth >= max_depth:
+                    return expansions
+                elementsToDepthIncrease = nextElementsToDepthIncrease
+                nextElementsToDepthIncrease = 0
+
+            #It's safer to do it here, not in loop above, in order to avoid pruning tuples that have the same nonterminals but different terminals on same depth
+            for nt in seen_non_terminals:
+                self._symbols_seen.add(nt)
 
         return expansions
 

@@ -1,12 +1,13 @@
 import sys
 import os
+import signal
 import subprocess
 import shutil
 import time
+import multiprocessing
 from os import listdir
 from os.path import isfile, join
 from joblib import Parallel, delayed
-import multiprocessing
 
 base_emulator_nr = 5554
 logback_config = """<?xml version="1.0" encoding="UTF-8"?>
@@ -82,6 +83,8 @@ class Data():
         emulator_nr = get_next_enumator_nr()
         self.emulator_name = "emulator-%d" % emulator_nr
         self.avd_name = "emulator%d" % emulator_nr
+
+        self.emulator_pid = 0
 
         self.grammar_input_dir = join(self.root_grammar_input_dir, self.avd_name)
         self.output_dir = join(self.root_output_dir, self.avd_name)
@@ -182,7 +185,8 @@ class Data():
                    "-no-window "
                    "-no-snapshot " % (android_home, self.avd_name)]
         print("Starting emulator with command %s" % str(command))
-        self.emulator_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        emulator_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        self.emulator_pid = emulator_process.pid
 
         print("Waiting 60 seconds for the emulator to start")
         time.sleep(10)
@@ -311,7 +315,11 @@ class Data():
         self._step4_run_grammar_inputs()
 
     def terminate(self):
-        self.emulator_process.terminate()
+        if self.emulator_pid > 0:
+            print("Terminating emulator with pid %s" % self.emulator_pid)
+            os.kill(self.emulator_pid, signal.SIGTERM)
+
+        print("Deleting AVD %s" % self.avd_name)
         self._delete_avd()
 
 
@@ -332,7 +340,9 @@ if __name__ == "__main__":
         item.start()
 
     num_cores = multiprocessing.cpu_count()
-    results = Parallel(n_jobs=len(data))(delayed(run)(item) for item in data)
+    pool = multiprocessing.Pool(processes=num_cores)
+
+    results = Parallel(n_jobs=num_cores)(delayed(run)(item) for item in data)
 
     for item in data:
         try:

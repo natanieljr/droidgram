@@ -83,9 +83,12 @@ class GrammarExtractor(private val mModelDir: Path) {
 
         val apkName = mModelDir.fileName.toString()
         val itemsFromApp = Files.readAllLines(stateFile)
-            .count { it.contains(apkName) }
+            .any { it.contains(apkName) }
 
-        return itemsFromApp > 0
+        val permissionDialogs = Files.readAllLines(stateFile)
+            .any { it.contains("com.android.packageinstaller:id") }
+
+        return itemsFromApp || permissionDialogs
     }
 
     private fun createProduction(

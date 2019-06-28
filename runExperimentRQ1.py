@@ -9,7 +9,7 @@ from os import listdir
 from os.path import isfile, join
 from joblib import Parallel, delayed
 
-base_emulator_nr = 5554
+emulator_port = 5554
 logback_config = """<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
@@ -45,10 +45,10 @@ logback_config = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-def get_next_enumator_nr():
-    global base_emulator_nr
-    ret = base_emulator_nr
-    base_emulator_nr += 2
+def get_next_emulator_port():
+    global emulator_port
+    ret = emulator_port
+    emulator_port += 2
     return ret
 
 
@@ -70,26 +70,35 @@ def init_all_experiments(apk_list):
 
 
 class Data():
-    def __init__(self, apk):
+    def __init__(self, apk, seed=None, parent_avd_name=None):
         self.root_logs_dir = "./logs"
         self.root_grammar_input_dir = "./input"
         self.root_apks_dir = "./apks"
         self.root_output_dir = "./output"
-        self.action_limit = 10
-        self.nr_seeds = 1
+        self.action_limit = 500
+        self.nr_seeds = 10
 
         self.apk = apk
         self.json = get_json_from_apk(apk)
-        emulator_nr = get_next_enumator_nr()
-        self.emulator_name = "emulator-%d" % emulator_nr
-        self.avd_name = "emulator%d" % emulator_nr
+        self.emulator_port = get_next_emulator_port()
+        self.emulator_name = "emulator-%d" % self.emulator_port
+        self.avd_name = "emulator%d" % self.emulator_port
 
         self.emulator_pid = 0
 
-        self.grammar_input_dir = join(self.root_grammar_input_dir, self.avd_name)
-        self.output_dir = join(self.root_output_dir, self.avd_name)
-        self.apk_dir = join(self.root_apks_dir, self.avd_name)
-        self.logs_dir = join(self.root_logs_dir, self.avd_name)
+        if seed is None:
+            self.grammar_input_dir = join(self.root_grammar_input_dir, self.avd_name)
+            self.output_dir = join(self.root_output_dir, self.avd_name)
+            self.apk_dir = join(self.root_apks_dir, self.avd_name)
+            self.logs_dir = join(self.root_logs_dir, self.avd_name)
+            self.seed = ""
+        else:
+            self.seed = seed
+
+            self.grammar_input_dir = join(self.root_grammar_input_dir, parent_avd_name, "seed%s" % seed)
+            self.output_dir = join(self.root_output_dir, parent_avd_name, "seed%s" % seed)
+            self.apk_dir = join(self.root_apks_dir, parent_avd_name)
+            self.logs_dir = join(self.root_logs_dir, parent_avd_name, "seed%s" % seed)
 
         self.debug()
         self._clean_logs_dir()
@@ -181,26 +190,14 @@ class Data():
         command = ["%s/emulator/emulator-headless "
                    "-avd "
                    " %s "
+                   "-port "
+                   " %d "
                    "-no-audio "
                    "-no-window "
-                   "-no-snapshot " % (android_home, self.avd_name)]
+                   "-no-snapshot " % (android_home, self.avd_name, self.emulator_port)]
         print("Starting emulator with command %s" % str(command))
         emulator_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
         self.emulator_pid = emulator_process.pid
-
-        print("Waiting 60 seconds for the emulator to start")
-        time.sleep(10)
-        print("Waiting 50 seconds for the emulator to start")
-        time.sleep(10)
-        print("Waiting 40 seconds for the emulator to start")
-        time.sleep(10)
-        print("Waiting 30 seconds for the emulator to start")
-        time.sleep(10)
-        print("Waiting 20 seconds for the emulator to start")
-        time.sleep(10)
-        print("Waiting 10 seconds for the emulator to start")
-        time.sleep(10)
-        print("Assuming that the emulator has started proceeding")
 
     def _copy_original_apk(self):
         try:
@@ -248,7 +245,7 @@ class Data():
             pass
 
     def _run_droidgram_explore(self):
-        log_name = "01explore"
+        log_name = "%s-01explore" % self.avd_name
         self._write_logback_config_files(log_name)
         command = ["./01.sh %s %s %d %s %s " % ("%s.xml" % log_name,
                                                 self.apk_dir,
@@ -269,7 +266,7 @@ class Data():
         shutil.move("%s/droidMate" % self.output_dir, "%s/droidMate" % self.grammar_input_dir)
 
     def _run_droidgram_extraction(self):
-        log_name = "02extract"
+        log_name = "%s-02extract" % self.avd_name
         self._write_logback_config_files(log_name)
         command = ["./02.sh %s %s %s/" % ("%s.xml" % log_name,
                                           self.grammar_input_dir,
@@ -292,8 +289,51 @@ class Data():
                    ]
         self._run_command(command, None)
 
-    def _step4_run_grammar_inputs(self):
-        log_name = "04run"
+        seeds = []
+        print("processing dir %s" % self.grammar_input_dir)
+        files = [join(self.grammar_input_dir, f) for f in os.listdir(self.grammar_input_dir)]
+        print("found files %s" % str(files))
+        for file in files:
+            if isfile(file) and os.path.basename(file).startswith("inputs") and file.endswith(".txt"):
+                print("processing seed file %s" % file)
+                seed_nr = int(os.path.basename(file).replace("inputs", "").replace(".txt", ""))
+                print("processing seed %d" % seed_nr)
+                seed_dir = join(self.grammar_input_dir, "seed%d" % seed_nr)
+                print("processing seed dir %s" % seed_dir)
+                try:
+                    os.mkdir(seed_dir)
+                except:
+                    pass
+                shutil.copy(file, seed_dir)
+                shutil.copy(join(self.grammar_input_dir, "grammar.txt"), seed_dir)
+                shutil.copy(join(self.grammar_input_dir, "translationTable.txt"), seed_dir)
+                print("copying output folder from %s to %s" % (join(self.grammar_input_dir, "droidMate"), join(seed_dir, "droidMate")))
+
+                try:
+                    shutil.rmtree(join(seed_dir, "droidMate"))
+                except:
+                    pass
+                shutil.copytree(join(self.grammar_input_dir, "droidMate"), join(seed_dir, "droidMate"))
+
+                seed = Data(self.apk, seed_nr, self.avd_name)
+                seeds.append(seed)
+
+        for seed in seeds:
+            seed.start()
+
+        print("Waiting 30 seconds for all emulators to start")
+        time.sleep(10)
+        print("Waiting 20 seconds for all emulators to start")
+        time.sleep(10)
+        print("Waiting 10 seconds for all emulators to start")
+        time.sleep(10)
+        print("Assuming that ALL emulators have started proceeding")
+
+        num_cores = multiprocessing.cpu_count()
+        Parallel(n_jobs=num_cores)(delayed(run_step4)(item) for item in seeds)
+
+    def step4_run_grammar_inputs(self):
+        log_name = "%s-04run" % self.avd_name
         self._write_logback_config_files(log_name)
         command = ["./04.sh %s %s %s %s %s " % ("%s.xml" % log_name,
                                                 self.grammar_input_dir,
@@ -312,7 +352,6 @@ class Data():
         self._step1_run_exploration()
         self._step2_extract_grammar()
         self._step3_fuzz_grammar()
-        self._step4_run_grammar_inputs()
 
     def terminate(self):
         if self.emulator_pid > 0:
@@ -322,6 +361,12 @@ class Data():
         print("Deleting AVD %s" % self.avd_name)
         self._delete_avd()
 
+
+def run_step4(item):
+    try:
+        item.step4_run_grammar_inputs()
+    except Exception as e:
+        print("Error `%s` when running the experiment in %s" % (str(e), item))
 
 def run(item):
     try:
@@ -338,6 +383,15 @@ if __name__ == "__main__":
 
     for item in data:
         item.start()
+
+    print("Waiting 30 seconds for all emulators to start")
+    time.sleep(10)
+    print("Waiting 20 seconds for all emulators to start")
+    time.sleep(10)
+    print("Waiting 10 seconds for all emulators to start")
+    time.sleep(10)
+    print("Assuming that ALL emulators have started proceeding")
+
 
     num_cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=num_cores)

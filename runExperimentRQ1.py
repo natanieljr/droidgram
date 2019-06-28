@@ -9,6 +9,39 @@ from joblib import Parallel, delayed
 import multiprocessing
 
 base_emulator_nr = 5554
+logback_config = """<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- reduce the produced standard output in console for clarity, but all debug out is still in the produced log file -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <encoder>
+            <pattern>%d{HH:mm:ss} %highlight(%-5level) %boldWhite%-20([%.18thread]) %cyan(%-35.35class{35}) %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <timestamp key="myTimestamp" datePattern="yyyy-MM-dd'_'HH-mm-ss.SSS"/>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="ch.qos.logback.classic.html.HTMLLayout">
+                <pattern>%d{HH:mm:ss.SSS}%thread%level%class%msg</pattern>
+            </layout>
+        </encoder>
+        <file><DIR>/<NAME>.html</file>
+        <append>true</append>
+        <!-- set immediateFlush to false for much higher logging throughput -->
+        <immediateFlush>true</immediateFlush>
+    </appender>
+
+    <root level="TRACE">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </root>
+
+</configuration>
+"""
 
 
 def get_next_enumator_nr():
@@ -82,6 +115,16 @@ class Data():
             pass
         try:
             os.mkdir(self.logs_dir)
+        except:
+            pass
+
+    def _write_logback_config_files(self, name):
+        try:
+            global logback_config
+            config = logback_config.replace("<DIR>", self.logs_dir).replace("<NAME>", name)
+            with open("%s.xml" % name, "w") as f:
+                f.write(config)
+                f.close()
         except:
             pass
 
@@ -201,11 +244,14 @@ class Data():
             pass
 
     def _run_droidgram_explore(self):
-        command = ["./01.sh %s %d %s %s " % (self.apk_dir,
-                                             self.action_limit,
-                                             self.emulator_name,
-                                             self.output_dir,
-                                             )
+        log_name = "01explore"
+        self._write_logback_config_files(log_name)
+        command = ["./01.sh %s %s %d %s %s " % ("%s.xml" % log_name,
+                                                self.apk_dir,
+                                                self.action_limit,
+                                                self.emulator_name,
+                                                self.output_dir,
+                                                )
                    ]
         self._run_command(command, None)
 
@@ -219,37 +265,38 @@ class Data():
         shutil.move("%s/droidMate" % self.output_dir, "%s/droidMate" % self.grammar_input_dir)
 
     def _run_droidgram_extraction(self):
-        # log_file = join(self.logs_dir, "02extract.log")
-        command = ["./02.sh %s %s/" % (self.grammar_input_dir,
-                                       self.grammar_input_dir,
-                                       # log_file
-                                       )
+        log_name = "02extract"
+        self._write_logback_config_files(log_name)
+        command = ["./02.sh %s %s %s/" % ("%s.xml" % log_name,
+                                          self.grammar_input_dir,
+                                          self.grammar_input_dir,
+                                          )
                    ]
         self._run_command(command, None)
 
     def _step2_extract_grammar(self):
         self._clean_grammar_input_dir()
+        self._move_exploration_output_to_grammar_input()
         self._run_droidgram_extraction()
 
     def _step3_fuzz_grammar(self):
-        # log_file = join(self.logs_dir, "03fuzz.log")
         command = ["python3 "
                    "grammar_terminal_inputs.py %s %s %d " % (self.root_grammar_input_dir,
                                                              self.avd_name,
                                                              self.nr_seeds,
-                                                             # log_file
                                                              )
                    ]
         self._run_command(command, None)
 
     def _step4_run_grammar_inputs(self):
-        log_file = join(self.logs_dir, "04grammar.log")
-        command = ["./04.sh %s %s %s %s " % (self.grammar_input_dir,
-                                             self.apk_dir,
-                                             self.output_dir,
-                                             self.emulator_name,
-                                             # log_file
-                                             )
+        log_name = "04run"
+        self._write_logback_config_files(log_name)
+        command = ["./04.sh %s %s %s %s %s " % ("%s.xml" % log_name,
+                                                self.grammar_input_dir,
+                                                self.apk_dir,
+                                                self.output_dir,
+                                                self.emulator_name,
+                                                )
                    ]
         self._run_command(command, None)
 

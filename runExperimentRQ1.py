@@ -351,4 +351,4 @@ if __name__ == "__main__":
             print("Error `%s` stopping AVD in %s" % (str(e), item))
 
     # book keeping, make sure all emulators are dead
-    os.execl("killall /home/nataniel.borges/android/emulator/qemu/linux-x86_64/qemu-system-x86_64-headless")
+    os.system("killall /home/nataniel.borges/android/emulator/qemu/linux-x86_64/qemu-system-x86_64-headless")

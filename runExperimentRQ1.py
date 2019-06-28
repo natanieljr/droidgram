@@ -318,6 +318,7 @@ class Data():
         if self.emulator_pid > 0:
             print("Terminating emulator with pid %s" % self.emulator_pid)
             os.kill(self.emulator_pid, signal.SIGTERM)
+            os.kill(self.emulator_pid, signal.SIGKILL)
 
         print("Deleting AVD %s" % self.avd_name)
         self._delete_avd()

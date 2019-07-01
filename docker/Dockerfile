@@ -85,6 +85,10 @@ ENV PATH="$PATH:${ANDROID_HOME}:${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOL
 ENV PATH="$PATH:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${JAVA_HOME}"
 
 # Set work dir
-WORKDIR /droidgram
+WORKDIR /test
+
+COPY *.sh /test/
+
+RUN chmod +x /test/*.sh
 
 CMD [ "bash" ]

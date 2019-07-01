@@ -1,3 +1,5 @@
+cd /test
+
 ./startEmu.sh &
 
 ./installDM.sh

@@ -30,6 +30,11 @@ object GrammarExplorationRunner {
             .withStrategy(GrammarStrategy(input, grammarMapping, cfg[ConfigProperties.Exploration.widgetActionDelay]))
 
         val modelProvider = CustomModelProvider()
-        return ExplorationAPI.explore(cfg, commandBuilder = builder, modelProvider = modelProvider)
+        return ExplorationAPI.explore(
+            cfg,
+            commandBuilder = builder,
+            modelProvider = modelProvider,
+            watcher = emptyList()
+        )
     }
 }

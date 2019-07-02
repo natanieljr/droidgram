@@ -11,7 +11,11 @@ object ExplorationRunner {
             val cfg = ExplorationAPI.config(args)
 
             val modelProvider = CustomModelProvider()
-            ExplorationAPI.explore(cfg, modelProvider = modelProvider)
+            ExplorationAPI.explore(
+                cfg,
+                watcher = emptyList(),
+                modelProvider = modelProvider
+            )
         }
     }
 }

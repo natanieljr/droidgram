@@ -1,3 +1,5 @@
+cd /test
+
 ./startEmu.sh &
 
 ./installDM.sh
@@ -8,3 +10,5 @@
 #sleep 20
 
 ./runExperiment.sh
+
+chmod -R 777 /test/

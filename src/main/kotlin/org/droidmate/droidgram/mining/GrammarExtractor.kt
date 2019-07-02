@@ -200,6 +200,7 @@ class GrammarExtractor(private val mModelDir: Path) {
      * Postprocessing includes: removing duplicate productions, removing terminate state
      */
     private fun postProcessGrammar() {
+        mGrammar.removeNonExistingStates()
         mGrammar.mergeEquivalentTransitions()
         mGrammar.removeTerminateActions()
         mGrammar.removeSingleStateTransitions()

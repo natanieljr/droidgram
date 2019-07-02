@@ -3,7 +3,7 @@ package org.droidmate.droidgram.grammar
 import com.google.gson.GsonBuilder
 
 class Grammar @JvmOverloads constructor(
-    val startSymbol: String = "<start>",
+    private val startSymbol: String = "<start>",
     private val emptySymbol: String = "<empty>",
     // val nonTerminalRegex: Regex = defaultNonTerminalRegex,
     initialGrammar: Map<String, Set<String>> =
@@ -12,10 +12,12 @@ class Grammar @JvmOverloads constructor(
             startSymbol to setOf(emptySymbol)
         )
 ) {
+    /*
     companion object {
         @JvmStatic
         fun from(grammar: Map<String, Set<String>>) = Grammar(initialGrammar = grammar)
     }
+    */
 
     operator fun get(key: String): Set<String>? {
         return grammar[key]
@@ -40,10 +42,27 @@ class Grammar @JvmOverloads constructor(
         }
     }
 
+    private fun removeEmptyStateTransitions() {
+        val singleState = grammar.entries
+            .filter { it.key.contains("(") }
+            .filter { it.value.isEmpty() }
+
+        singleState.forEach { entry ->
+            val oldValue = entry.key
+            val newValue = "<empty>"
+
+            grammar.replaceAll { _, v ->
+                v.map { it.replace(oldValue, newValue) }.toMutableSet()
+            }
+            grammar.remove(oldValue)
+        }
+
+    }
+
     fun removeSingleStateTransitions() {
         val singleState = grammar.entries
             .filter { it.key.contains("(") }
-            .filter { it.value.size == 1 && it.value.any { it != "<empty>" } }
+            .filter { it.value.size == 1 && it.value.any { p -> p != "<empty>" } }
 
         singleState.forEach { entry ->
             val oldValue = entry.key
@@ -56,11 +75,41 @@ class Grammar @JvmOverloads constructor(
         }
     }
 
+    /**
+     * When an action points to a state an the next action is a reset.
+     * The transition state is not created
+     */
+    fun removeNonExistingStates() {
+        val nonExistingState = grammar.entries
+            .flatMap {
+                it.value.flatMap { p ->
+                    p.nonTerminals().map { q ->
+                        Pair(it.key, q)
+                    }
+                }
+            }
+            .filter { !grammar.containsKey(it.second) }
+
+        nonExistingState.forEach { entry ->
+            val key = entry.first
+            val illegalState = entry.second
+
+            val newValue = grammar.getValue(key)
+                .map { it.replace(illegalState, "") }
+                .filter { it.isNotEmpty() }
+                .toMutableSet()
+            grammar.replace(key, newValue)
+        }
+
+        // After removing states, some resulting states may be empty
+        removeEmptyStateTransitions()
+    }
+
     fun mergeEquivalentTransitions() {
         val duplicates = grammar.entries
             .groupBy { it.value }
             .filter { it.value.size > 1 }
-            .map { it.value.map { it.key } }
+            .map { it.value.map { p -> p.key } }
 
         duplicates.forEach { keys ->
             val target = keys.first()

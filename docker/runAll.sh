@@ -10,3 +10,5 @@ cd /test
 #sleep 20
 
 ./runExperiment.sh
+
+chmod -R 777 /test/

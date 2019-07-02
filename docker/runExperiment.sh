@@ -3,14 +3,16 @@ cd droidgram
 OUTPUT_DIR=/test/experiment/output
 INPUT_DIR=/test/experiment/input
 APKS_DIR=/test/experiment/apks
-NR_SEEDS=3
-ACTION_LIMIT=10
+NR_SEEDS=10
+ACTION_LIMIT=1000
 
 mkdir ${INPUT_DIR}
+chmod 777 ${INPUT_DIR}
 
 echo "Cleaning output folder ${OUTPUT_DIR}"
 rm -rf ${OUTPUT_DIR}
 mkdir ${OUTPUT_DIR}
+chmod 777 ${OUTPUT_DIR}
 
 echo "Cleaning input folder ${INPUT_DIR}/apks/"
 rm -rf ${INPUT_DIR}/apks/droidMate

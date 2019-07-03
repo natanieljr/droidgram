@@ -333,7 +333,6 @@ object ResultBuilder {
                 } catch (e: IllegalStateException) {
                     log.error("${rootDir.fileName} - ${e.message}")
                 }
-
             }
     }
 }

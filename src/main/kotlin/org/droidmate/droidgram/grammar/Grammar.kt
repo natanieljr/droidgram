@@ -49,7 +49,6 @@ class Grammar @JvmOverloads constructor(
             }
             grammar.remove(oldValue)
         }
-
     }
 
     fun removeSingleStateTransitions() {

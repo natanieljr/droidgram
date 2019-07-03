@@ -3,9 +3,10 @@ package org.droidmate.droidgram
 import com.natpryce.konfig.CommandLineOption
 import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
-import org.droidmate.droidgram.exploration.GrammarExplorationRunner
-import org.droidmate.droidgram.mining.ExplorationRunner
+import org.droidmate.droidgram.runner.GrammarExploration
+import org.droidmate.droidgram.runner.DefaultExploration
 import org.droidmate.droidgram.mining.GrammarExtractor
+import org.droidmate.droidgram.reporter.ResultBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -30,7 +31,7 @@ object ExperimentMain {
                 GrammarExtractor.main(args.filterNot { it.contains("extract") }.toTypedArray())
                 System.exit(0)
             } else if (args.contains("run")) {
-                ExplorationRunner.main(args.filterNot { it.contains("run") }.toTypedArray())
+                DefaultExploration.main(args.filterNot { it.contains("run") }.toTypedArray())
                 System.exit(0)
             }
 
@@ -55,7 +56,7 @@ object ExperimentMain {
                         "--Output-outputDir=$experimentDir")
 
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
-                    GrammarExplorationRunner.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
+                    GrammarExploration.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
 
                     // Grammar coverage relative to current input
                     ResultBuilder.generateGrammarCoverage(input, experimentCfg.droidmateOutputDirPath)

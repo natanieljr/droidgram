@@ -1,4 +1,4 @@
-package org.droidmate.droidgram.exploration
+package org.droidmate.droidgram.grammar
 
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.Click
@@ -31,11 +31,21 @@ data class GrammarInput(val grammarId: String, val widget: UUID, val action: Str
                 ""
             }
 
-            return GrammarInput(input, translationTable.getUID(widget), action, textualData)
+            return GrammarInput(
+                input,
+                translationTable.getUID(widget),
+                action,
+                textualData
+            )
         }
 
         fun createFetch(target: GrammarInput): GrammarInput {
-            return GrammarInput(target.grammarId, target.widget, ActionType.FetchGUI.name, "")
+            return GrammarInput(
+                target.grammarId,
+                target.widget,
+                ActionType.FetchGUI.name,
+                ""
+            )
         }
     }
 

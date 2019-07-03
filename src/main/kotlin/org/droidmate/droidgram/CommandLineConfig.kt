@@ -5,5 +5,4 @@ import com.natpryce.konfig.getValue
 
 object CommandLineConfig {
     val inputDir by uriType
-    val outputDir by uriType
 }

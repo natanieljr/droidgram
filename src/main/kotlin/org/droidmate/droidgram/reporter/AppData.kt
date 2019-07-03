@@ -1,4 +1,4 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.reporter
 
 class AppData(
     private val apk: String,

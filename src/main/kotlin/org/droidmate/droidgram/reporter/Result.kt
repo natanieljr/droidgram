@@ -1,4 +1,4 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.reporter
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

@@ -1,16 +1,18 @@
-package org.droidmate.droidgram.exploration
+package org.droidmate.droidgram.runner
 
 import org.droidmate.api.ExplorationAPI
 import org.droidmate.command.ExploreCommandBuilder
 import org.droidmate.configuration.ConfigProperties
 import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.device.android_sdk.Apk
+import org.droidmate.droidgram.exploration.CustomModelProvider
+import org.droidmate.droidgram.grammar.GrammarStrategy
 import org.droidmate.exploration.SelectorFunction
 import org.droidmate.exploration.StrategySelector
 import org.droidmate.misc.FailableExploration
 import java.util.UUID
 
-object GrammarExplorationRunner {
+object GrammarExploration {
     suspend fun exploreWithGrammarInput(
         cfg: ConfigurationWrapper,
         input: String,
@@ -27,7 +29,13 @@ object GrammarExplorationRunner {
 
         val builder = ExploreCommandBuilder.fromConfig(cfg)
             .insertBefore(StrategySelector.startExplorationReset, "Grammar", selector)
-            .withStrategy(GrammarStrategy(input, grammarMapping, cfg[ConfigProperties.Exploration.widgetActionDelay]))
+            .withStrategy(
+                GrammarStrategy(
+                    input,
+                    grammarMapping,
+                    cfg[ConfigProperties.Exploration.widgetActionDelay]
+                )
+            )
 
         val modelProvider = CustomModelProvider()
         return ExplorationAPI.explore(

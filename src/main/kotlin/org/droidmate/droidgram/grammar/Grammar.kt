@@ -12,13 +12,6 @@ class Grammar @JvmOverloads constructor(
             startSymbol to setOf(emptySymbol)
         )
 ) {
-    /*
-    companion object {
-        @JvmStatic
-        fun from(grammar: Map<String, Set<String>>) = Grammar(initialGrammar = grammar)
-    }
-    */
-
     operator fun get(key: String): Set<String>? {
         return grammar[key]
     }

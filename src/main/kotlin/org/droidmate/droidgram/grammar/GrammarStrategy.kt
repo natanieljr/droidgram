@@ -1,6 +1,7 @@
-package org.droidmate.droidgram.exploration
+package org.droidmate.droidgram.grammar
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.droidgram.exploration.CustomState
 import org.droidmate.exploration.strategy.AbstractStrategy
 import java.util.UUID
 

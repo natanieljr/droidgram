@@ -1,4 +1,4 @@
-package org.droidmate.droidgram.exploration
+package org.droidmate.droidgram.grammar
 
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -6,6 +6,9 @@ import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.GlobalAction
 import org.droidmate.deviceInterface.exploration.Swipe
+import org.droidmate.droidgram.exploration.CustomModel
+import org.droidmate.droidgram.exploration.CustomState
+import org.droidmate.droidgram.exploration.CustomWidget
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.clickEvent
@@ -27,11 +30,6 @@ class GrammarReplayMF(
     private val translationTable: Map<String, UUID>,
     private val delay: Long
 ) : ModelFeature() {
-    companion object {
-        const val notReachedTerminals = "notReachedTerminals.txt"
-        const val reachedTerminals = "reachedTerminals.txt"
-    }
-
     override val coroutineContext: CoroutineContext = CoroutineName("GrammarReplayMF") + Job()
 
     private var currIndex: Int = -2
@@ -45,7 +43,8 @@ class GrammarReplayMF(
             .split(" ")
             .filter { it.isNotEmpty() }
             .flatMap {
-                val actionInput = GrammarInput.fromString(it, translationTable)
+                val actionInput =
+                    GrammarInput.fromString(it, translationTable)
                 val fetchInput = GrammarInput.createFetch(actionInput)
 
                 listOf(fetchInput, actionInput)

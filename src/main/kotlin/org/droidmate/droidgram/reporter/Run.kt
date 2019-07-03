@@ -1,4 +1,4 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.reporter
 
 data class Run(val _inputs: List<String>, val grammar: Result<String>, val code: Result<Long>) {
     private val inputs: List<List<String>> by lazy {

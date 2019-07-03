@@ -1,10 +1,10 @@
-package org.droidmate.droidgram.mining
+package org.droidmate.droidgram.runner
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
 import org.droidmate.droidgram.exploration.CustomModelProvider
 
-object ExplorationRunner {
+object DefaultExploration {
     @JvmStatic
     fun main(args: Array<String>) {
         runBlocking {

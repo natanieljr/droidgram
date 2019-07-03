@@ -1,13 +1,12 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.reporter
 
-import org.droidmate.droidgram.exploration.GrammarReplayMF
+import org.droidmate.droidgram.grammar.reachedTerminals
 import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.streams.asSequence
 import kotlin.streams.toList
 
 object ResultBuilder {
@@ -30,7 +29,7 @@ object ResultBuilder {
      */
     private fun getFilesReachedWidgets(explorationResultDir: Path): List<Path> {
         return Files.walk(explorationResultDir)
-            .filter { it.fileName.toString() == GrammarReplayMF.reachedTerminals }
+            .filter { it.fileName.toString() == reachedTerminals }
             .toList()
     }
 
@@ -59,11 +58,34 @@ object ResultBuilder {
     }
 
     private fun getReachedStatements(baseDir: Path): Set<Long> {
-        return getFilesReachedStatements(baseDir)
-            .flatMap { Files.readAllLines(it) }
-            .filter { it.isNotEmpty() }
-            .map { stmt -> stmt.takeWhile { it != ';' }.toLong() }
-            .toSet()
+        val files = getFilesReachedStatements(baseDir)
+        val fileCount = files.size
+        val coverages = files.mapIndexed { index, file ->
+            val lineSet = mutableSetOf<Long>()
+            log.debug("Processing file $file ($index/$fileCount)")
+
+            if (index % 100 == 0) {
+                log.info("Processing file $file ($index/$fileCount)")
+            }
+
+            Files.newBufferedReader(file).useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isNotEmpty()) {
+                        val id = line.takeWhile { it != ';' }.toLong()
+                        lineSet.add(id)
+                    }
+                }
+            }
+            lineSet
+        }
+
+        return if (coverages.isNotEmpty())
+            coverages.reduce { acc, mutableSet ->
+            acc.addAll(mutableSet)
+            acc
+        } else {
+            emptySet()
+        }
     }
 
     private fun getCodeCoverage(allStatements: Set<Long>, dir: Path): Result<Long> {
@@ -83,13 +105,13 @@ object ResultBuilder {
 
         val res = Result(allStatements.toList(), reached, missing)
 
-        check(res.coverage in 0.0..1.0) { "Expected code coverage between 0 and 1. Found ${res.coverage}" }
+        localCheck(res.coverage in 0.0..1.0) { "Expected code coverage between 0 and 1. Found ${res.coverage}" }
 
         return res
     }
 
     fun generateGrammarCoverage(input: String, dir: Path) {
-        ResultBuilder.generateGrammarCoverage(listOf(input), dir)
+        generateGrammarCoverage(listOf(input), dir)
     }
 
     private fun getGrammarCoverage(allTerminals: List<String>, dir: Path): Result<String> {
@@ -141,15 +163,17 @@ object ResultBuilder {
             .forEach { seedDir ->
                 log.info("Writing seed ${seedDir.fileName} into summary")
 
-                val grammarCoverage = getGrammarCoverage(allTerminals, seedDir)
-                val codeCoverage = getCodeCoverage(allStatements, seedDir)
+                val grammarCoverage =
+                    getGrammarCoverage(allTerminals, seedDir)
+                val codeCoverage =
+                    getCodeCoverage(allStatements, seedDir)
 
                 val index = seedDir.fileName.toString().removePrefix("seed").toInt()
                 val inputSize = getInputSize(inputs[index])
 
                 sb.append(index)
                     .append("\t")
-                    .append(inputSize.average())
+                    .append(inputSize.sum())
                     .append("\t")
                     .append(grammarCoverage.reached.size)
                     .append("\t")
@@ -174,7 +198,7 @@ object ResultBuilder {
             .flatMap {
             it.split(" ")
                 .toList()
-                .filter { it.isNotEmpty() }
+                .filter { p -> p.isNotEmpty() }
         }.toSet()
 
         val reached = getReachedTerminals(dir)
@@ -182,42 +206,22 @@ object ResultBuilder {
 
         val res = Result(allTerminals.toList(), reached, missing)
 
-        check(res.coverage in 0.0..1.0) { "Expected terminal coverage between 0 and 1. Found ${res.coverage}" }
+        localCheck(res.coverage in 0.0..1.0) { "Expected terminal coverage between 0 and 1. Found ${res.coverage}" }
 
         return res
-    }
-
-    private fun Path.containsDir(dirName: String): Boolean {
-        return Files.list(this)
-            .toList()
-            .any { Files.isDirectory(it) && it.fileName.toString() == dirName }
-    }
-
-    private fun Path.getOutputDir(rootOutputDir: Path): Path {
-        val fileName = if (this.fileName.toString().startsWith("CHECK")) {
-            this.fileName.toString().removePrefix("CHECK").trim()
-        } else {
-            this.fileName.toString()
-        }
-
-        val outputDir = rootOutputDir.resolve(fileName)
-
-        check(Files.exists(outputDir)) { "Output dir $outputDir not found" }
-
-        return outputDir
     }
 
     private fun Path.getInputs(): List<List<String>> {
         val files = getFilesInputs(this)
 
-        check(files.isNotEmpty()) { "Input directory $this doesn't contain any input file (inputs*.txt)" }
+        localCheck(files.isNotEmpty()) { "Input directory $this doesn't contain any input file (inputs*.txt)" }
 
         val data = files.map { inputFile ->
             Files.readAllLines(inputFile)
                 .filter { it.isNotEmpty() }
         }
 
-        check(data.size == 11) { "Expecting 11 seeds per app. Found ${data.size}" }
+        localCheck(data.size == 10) { "Expecting 10 seeds per app. Found ${data.size}" }
 
         return data
     }
@@ -229,7 +233,7 @@ object ResultBuilder {
             .filter { it.fileName.toString().startsWith("seed") }
             .toList()
 
-        check(seedDirs.size == 11) { "Expecting 11 seed results. Found ${seedDirs.size}" }
+        localCheck(seedDirs.size == 10) { "Expecting 10 seed results. Found ${seedDirs.size}" }
 
         return seedDirs
     }
@@ -258,62 +262,78 @@ object ResultBuilder {
             .toSet()
     }
 
+    private fun localCheck(value: Boolean, lazyMessage: () -> String): Boolean {
+        if (!value) {
+            log.warn(lazyMessage())
+        }
+
+        return value
+    }
+
     @JvmStatic
     fun main(args: Array<String>) {
-        val rootDir = Paths.get("/Volumes/Experiments/20-icse-regression-with-grammars")
-        val inputDir = rootDir.resolve("input")
-        val resultDir = rootDir.resolve("done")
-        val apksDir = rootDir.resolve("apks")
+        val experimentRootDir = Paths.get("/Users/nataniel/Documents/saarland/repositories/test/droidgram/out/colossus")
 
-        Files.list(inputDir)
-            .sorted()
-            .asSequence()
-            .filter { Files.isDirectory(it) }
-            .filterNot { it.fileName.toString().startsWith("_") }
-            .filterNot { it.fileName.toString().startsWith("CHECK") }
-            .filterNot { it.fileName.toString().startsWith("apks") }
-            .filter { it.fileName.toString().contains("org.asdtm.fas") }
-            .forEach { appInputDir ->
+        Files.list(experimentRootDir)
+            .forEach { rootDir ->
+                val inputDir = rootDir.resolve("input").resolve("apks")
+                val resultDir = rootDir.resolve("output")
+                val apksDir = rootDir.resolve("apks")
+                val modelDir = inputDir.resolve("droidMate")
                 try {
-                    check(appInputDir.containsDir("droidmate") || appInputDir.containsDir("droidMate")) {
-                        "Droidmate dir not found in $appInputDir"
+                    log.debug("Processing input dir: $inputDir")
+                    log.debug("Processing output dir: $resultDir")
+
+                    localCheck(Files.exists(modelDir)) {
+                        "Droidmate dir not found in $modelDir"
                     }
-                    log.debug("Processing input dir: $appInputDir")
 
-                    val appOutputDir = appInputDir.getOutputDir(resultDir)
-                    log.debug("Processing output dir: $appOutputDir")
-
-                    val jsonFile = apksDir.findApkJSON(appInputDir.fileName.toString())
+                    val jsonFile = apksDir.findApkJSON(rootDir.fileName.toString())
                     log.debug("Processing instrumentation file: $jsonFile")
                     val loc = getTotalLOC(jsonFile)
 
-                    val translationTableFile = appInputDir.resolve("translationTable.txt")
-                    check(Files.exists(translationTableFile)) { "Input directory $appInputDir missing translation table file" }
-                    log.debug("Processing translation table file: $translationTableFile")
+                    val translationTableFile = inputDir.resolve("translationTable.txt")
+                    if (localCheck(Files.exists(translationTableFile)) {
+                            "Input directory $inputDir missing translation table file"
+                        }) {
+                        log.debug("Processing translation table file: $translationTableFile")
 
-                    val translationTable = Files.readAllLines(translationTableFile)
-                        .filter { it.isNotEmpty() }
+                        val translationTable = Files.readAllLines(translationTableFile)
+                            .filter { it.isNotEmpty() }
 
-                    val inputs = appInputDir.getInputs()
-                    val originalStatements = getReachedStatements(appInputDir)
+                        val inputs = inputDir.getInputs()
+                        val originalStatements =
+                            getReachedStatements(inputDir)
 
-                    val seedDirs = appOutputDir.getSeedDirs()
+                        val seedDirs = resultDir.getSeedDirs()
 
-                    val result = AppData(appInputDir.fileName.toString(), translationTable, loc, originalStatements)
+                        val result =
+                            AppData(
+                                rootDir.fileName.toString(),
+                                translationTable,
+                                loc,
+                                originalStatements
+                            )
 
-                    seedDirs.forEachIndexed { idx, seedDir ->
-                        val input = inputs[idx]
-                        val code = calculateCodeCoverage(originalStatements, seedDir)
-                        val grammar = calculateGrammarCoverage(input, seedDir)
+                        seedDirs.forEachIndexed { idx, seedDir ->
+                            val input = inputs[idx]
+                            val code = calculateCodeCoverage(
+                                originalStatements,
+                                seedDir
+                            )
+                            val grammar =
+                                calculateGrammarCoverage(input, seedDir)
 
-                        result.addRun(input, grammar, code)
+                            result.addRun(input, grammar, code)
+                        }
+
+                        log.debug("Processed $inputDir generating result")
+                        println(result.toString())
                     }
-
-                    // log.info(result.toString())
-                    println(result.toString())
                 } catch (e: IllegalStateException) {
-                    log.error("${appInputDir.fileName} - ${e.message}")
+                    log.error("${rootDir.fileName} - ${e.message}")
                 }
+
             }
     }
 }

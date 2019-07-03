@@ -8,7 +8,14 @@ import java.util.UUID
 import kotlin.streams.toList
 
 class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: ConfigurationWrapper) {
-    val inputDir: Path = Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath()
+    val inputDir by lazy { Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath() }
+    val seedNr by lazy {
+        if (cfg.contains(CommandLineConfig.seedNr)) {
+            cfg[CommandLineConfig.seedNr]
+        } else {
+            -1
+        }
+    }
 
     init {
         if (!cfg.contains(CommandLineConfig.inputDir)) {
@@ -26,6 +33,7 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
                 it.fileName.toString().startsWith("input") &&
                         it.fileName.toString().endsWith(".txt")
             }
+            .filter { it.fileName.toString().endsWith("$seedNr.txt") || seedNr == -1 }
             .toList()
             .sorted()
 

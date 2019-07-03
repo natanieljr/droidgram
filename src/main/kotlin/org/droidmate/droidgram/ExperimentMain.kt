@@ -21,6 +21,12 @@ object ExperimentMain {
             description = "Path to a directory with all inputs files to be used.",
             short = "i",
             metavar = "Path"
+        ),
+        CommandLineOption(
+            CommandLineConfig.seedNr,
+            description = "Number of the seed to be processed.",
+            short = "s",
+            metavar = "Int"
         )
     )
 
@@ -44,7 +50,6 @@ object ExperimentMain {
             val seedList = data.inputs
 
             seedList.forEachIndexed { seed, inputs ->
-
                 val seedDir = mainCfg.droidmateOutputDirPath.resolve("seed$seed")
                 val seedArgs = arrayOf(*args, "--Output-outputDir=$seedDir")
                 val seedCfg = ExplorationAPI.config(seedArgs, *extraCmdOptions())

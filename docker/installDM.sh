@@ -6,4 +6,4 @@ cd droidmate
 
 ./gradlew clean build install
 
-cd ..
+cd /test

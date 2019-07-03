@@ -21,6 +21,7 @@ class GrammarExtractor(private val mModelDir: Path) {
     private val mIdMapping = mutableMapOf<String, String>()
     private val mGrammar = Grammar()
     private val mStatesDir = mModelDir.resolve("states")
+    private var mIsInitialized = false
 
     private fun String.getUUID(): String {
         return this.split("_").firstOrNull().orEmpty()
@@ -151,7 +152,9 @@ class GrammarExtractor(private val mModelDir: Path) {
     }
 
     private fun extractGrammar() {
-        assert(mIdMapping.isEmpty()) { "Grammar cannot be re-generated in the same instance" }
+        assert(!mIsInitialized) { "Grammar cannot be re-generated in the same instance" }
+        mIsInitialized = true
+
         val trace = getTraceFile(mModelDir)
 
         var previousSourceStateConcreteId = ""
@@ -207,14 +210,14 @@ class GrammarExtractor(private val mModelDir: Path) {
     }
 
     val grammar by lazy {
-        if (mIdMapping.isEmpty()) {
+        if (!mIsInitialized) {
             throw IllegalStateException("Grammar has not been initialized")
         }
         mGrammar
     }
 
     val mapping by lazy {
-        if (mIdMapping.isEmpty()) {
+        if (!mIsInitialized) {
             throw IllegalStateException("Grammar has not been initialized")
         }
 

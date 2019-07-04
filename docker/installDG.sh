@@ -6,3 +6,4 @@ cd droidgram
 
 ./gradlew clean build
 
+cd /test

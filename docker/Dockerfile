@@ -27,15 +27,15 @@ RUN apt-get update --yes && \
 	apt-get install --yes \
 		apt-utils \
 	        wget \
-        	curl \
+                curl \
 	        tar \
-        	unzip \
+                unzip \
 	        lib32stdc++6 \
-        	lib32z1 \
+                lib32z1 \
 	        openjdk-8-jdk \
-        	openjdk-8-jre && \
+                openjdk-8-jre && \
 		apt-get install --yes python \
-        	git && \
+                git && \
 	apt-get upgrade --yes && \
 	apt-get dist-upgrade --yes && \
 	apt-get update && \
@@ -89,6 +89,9 @@ WORKDIR /test
 
 COPY *.sh /test/
 
-RUN chmod +x /test/*.sh
+RUN chmod +x /test/*.sh && \
+    cd /test && \
+    ./installDM.sh && \
+    ./installDG.sh
 
 CMD [ "bash" ]

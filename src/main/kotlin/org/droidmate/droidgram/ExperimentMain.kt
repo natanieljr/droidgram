@@ -76,7 +76,7 @@ object ExperimentMain {
                 ResultBuilder.generateCodeCoverage(data.coverage, seedCfg.droidmateOutputDirPath)
             }
 
-            ResultBuilder.generateSummary(data.inputs, data.coverage, mainCfg.droidmateOutputDirPath)
+            ResultBuilder.generateSummary(data.inputs, data.coverage, mainCfg.droidmateOutputDirPath, data.seedNr)
         }
     }
 }

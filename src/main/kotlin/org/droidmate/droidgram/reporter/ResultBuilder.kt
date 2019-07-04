@@ -12,6 +12,7 @@ import kotlin.streams.toList
 object ResultBuilder {
     @JvmStatic
     private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
+    private const val nrSeeds = 11
 
     /**
      * Pattern: inputs00.txt, inputs01.txt, ..., inputs10.txt
@@ -150,7 +151,7 @@ object ResultBuilder {
         Files.write(inputSizeFile, sb.toString().toByteArray())
     }
 
-    fun generateSummary(inputs: List<List<String>>, allStatements: Set<Long>, dir: Path) {
+    fun generateSummary(inputs: List<List<String>>, allStatements: Set<Long>, dir: Path, seedNr: Int) {
         val sb = StringBuilder()
         sb.appendln("Seed\tInput Size\tGrammarReached\tGrammarMissed\tGrammarCov\tCodeReached\tCodeMissed\tCodeCov")
 
@@ -169,7 +170,11 @@ object ResultBuilder {
                     getCodeCoverage(allStatements, seedDir)
 
                 val index = seedDir.fileName.toString().removePrefix("seed").toInt()
-                val inputSize = getInputSize(inputs[index])
+                val inputSize = if (seedNr >= 0) {
+                    getInputSize(inputs[0])
+                } else {
+                    getInputSize(inputs[index])
+                }
 
                 sb.append(index)
                     .append("\t")
@@ -221,7 +226,7 @@ object ResultBuilder {
                 .filter { it.isNotEmpty() }
         }
 
-        localCheck(data.size == 10) { "Expecting 10 seeds per app. Found ${data.size}" }
+        localCheck(data.size == nrSeeds) { "Expecting $nrSeeds seeds per app. Found ${data.size}" }
 
         return data
     }
@@ -233,7 +238,7 @@ object ResultBuilder {
             .filter { it.fileName.toString().startsWith("seed") }
             .toList()
 
-        localCheck(seedDirs.size == 10) { "Expecting 10 seed results. Found ${seedDirs.size}" }
+        localCheck(seedDirs.size == nrSeeds) { "Expecting $nrSeeds seed results. Found ${seedDirs.size}" }
 
         return seedDirs
     }
@@ -273,6 +278,8 @@ object ResultBuilder {
     @JvmStatic
     fun main(args: Array<String>) {
         val experimentRootDir = Paths.get("/Users/nataniel/Documents/saarland/repositories/test/droidgram/out/colossus")
+
+        val sb = StringBuilder()
 
         Files.list(experimentRootDir)
             .forEach { rootDir ->
@@ -328,11 +335,17 @@ object ResultBuilder {
                         }
 
                         log.debug("Processed $inputDir generating result")
-                        println(result.toString())
+                        val str = result.toString()
+                        sb.appendln(str)
+                        println(str)
                     }
                 } catch (e: IllegalStateException) {
                     log.error("${rootDir.fileName} - ${e.message}")
                 }
             }
+
+        sb.lineSequence().forEach { line ->
+            print(line)
+        }
     }
 }

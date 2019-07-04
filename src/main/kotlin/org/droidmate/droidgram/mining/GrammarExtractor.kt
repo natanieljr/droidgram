@@ -4,6 +4,7 @@ import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.LaunchApp
 import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.isLaunchApp
+import org.droidmate.deviceInterface.exploration.isPressBack
 import org.droidmate.droidgram.grammar.Grammar
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -102,11 +103,18 @@ class GrammarExtractor(private val mModelDir: Path) {
         val sourceStateUID = sourceStateConcreteId.getId("s")
         val sourceStateNonTerminal = "<$sourceStateUID>"
 
-        val resultState = if (resultStateConcreteId.belongsToApp()) {
+        val resultState = when {
+            action.isLaunchApp() -> resultStateConcreteId.getId("s")
+            resultStateConcreteId.belongsToApp() -> resultStateConcreteId.getId("s")
+            else -> ""
+        }
+        /*
+        if (resultStateConcreteId.belongsToApp()) {
             resultStateConcreteId.getId("s")
         } else {
             ""
         }
+        */
 
         val widgetUID = if (widgetId != "null") {
             widgetId.getId("w")
@@ -178,7 +186,12 @@ class GrammarExtractor(private val mModelDir: Path) {
             }
 
             // Create only if action was in the app or is launch/back
-            if (action.isLaunchApp() || sourceStateConcreteId.belongsToApp()) {
+            if (action.isLaunchApp() || action.isPressBack() || sourceStateConcreteId.belongsToApp()) {
+                // Pressed back after a start.
+                if (action.isPressBack() && previousSourceStateConcreteId == "") {
+                    createProduction(LaunchApp.name, "", sourceStateConcreteId, "", "")
+                }
+
                 // If state was already used on the right side of an expression, it can be used.
                 // Otherwise append to previous
                 val sourceId = if (mIdMapping.containsKey(sourceStateConcreteId.getUUID())) {
@@ -187,7 +200,9 @@ class GrammarExtractor(private val mModelDir: Path) {
                     previousSourceStateConcreteId
                 }
 
-                check(action.isLaunchApp() || sourceId.isNotEmpty()) { "No source id identified for entry $entry" }
+                check(action.isLaunchApp() || sourceId.isNotEmpty()) {
+                    "No source id identified for entry $entry"
+                }
 
                 createProduction(action, sourceId, resultStateConcreteId, widgetId, payload)
                 previousSourceStateConcreteId = sourceId

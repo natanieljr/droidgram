@@ -67,6 +67,22 @@ class Grammar @JvmOverloads constructor(
         }
     }
 
+    fun removeUnusedSymbols() {
+        val unusedEntries = grammar.entries
+            .filterNot { x ->
+                grammar.any { y ->
+                    y.value.any { z ->
+                        z.contains(x.key)
+                    }
+                }
+            }
+            .filterNot { it.key == "<start>" }
+
+        unusedEntries.forEach { entry ->
+            grammar.remove(entry.key)
+        }
+    }
+
     /**
      * When an action points to a state an the next action is a reset.
      * The transition state is not created

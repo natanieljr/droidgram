@@ -222,6 +222,7 @@ class GrammarExtractor(private val mModelDir: Path) {
         mGrammar.mergeEquivalentTransitions()
         mGrammar.removeTerminateActions()
         mGrammar.removeSingleStateTransitions()
+        mGrammar.removeUnusedSymbols()
     }
 
     val grammar by lazy {

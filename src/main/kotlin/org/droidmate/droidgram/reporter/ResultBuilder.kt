@@ -277,7 +277,11 @@ object ResultBuilder {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val experimentRootDir = Paths.get("/Users/nataniel/Documents/saarland/repositories/test/droidgram/out/colossus")
+        val experimentRootDir = if (args.isNotEmpty()) {
+            Paths.get(args.first())
+        } else {
+            Paths.get("/Users/nataniel/Documents/saarland/repositories/test/droidgram/out/colossus")
+        }
 
         val sb = StringBuilder()
 

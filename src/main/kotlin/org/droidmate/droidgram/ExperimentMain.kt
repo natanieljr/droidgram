@@ -9,6 +9,7 @@ import org.droidmate.droidgram.mining.GrammarExtractor
 import org.droidmate.droidgram.reporter.ResultBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.system.exitProcess
 
 object ExperimentMain {
     @JvmStatic
@@ -33,12 +34,15 @@ object ExperimentMain {
     @JvmStatic
     fun main(args: Array<String>) {
         runBlocking {
-            if (args.contains("extract")) {
+            if (args.contains("result")) {
+                ResultBuilder.main(args.filterNot { it.contains("result") }.toTypedArray())
+                exitProcess(0)
+            } else if (args.contains("extract")) {
                 GrammarExtractor.main(args.filterNot { it.contains("extract") }.toTypedArray())
-                System.exit(0)
+                exitProcess(0)
             } else if (args.contains("run")) {
                 DefaultExploration.main(args.filterNot { it.contains("run") }.toTypedArray())
-                System.exit(0)
+                exitProcess(0)
             }
 
             val mainCfg = ExplorationAPI.config(args, *extraCmdOptions())

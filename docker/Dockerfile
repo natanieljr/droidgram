@@ -79,7 +79,7 @@ RUN ${ANDROID_SDK_MANAGER} --list || true && \
 	echo yes | ${ANDROID_SDK_MANAGER} --licenses && \
 # Setup emulators
 # Create the platforms directory, otherwise the error appears when running the emulator: "PANIC: Broken AVD system path"
-	echo no | ${ANDROID_AVD_MANAGER} create avd -n emu -k "system-images;android-28;google_apis;x86" -d  pixel
+	echo no | ${ANDROID_AVD_MANAGER} create avd -n emu -k "system-images;android-28;google_apis;x86" -d  pixel -c 2048M
 
 ENV PATH="$PATH:${ANDROID_HOME}:${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/:${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS_LEGACY}/:${ANDROID_HOME}/platform-tools/"
 ENV PATH="$PATH:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${JAVA_HOME}"

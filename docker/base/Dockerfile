@@ -1,4 +1,4 @@
-FROM dmbase:latest
+FROM debian:stretch
 # FROM debian:stretch-slim
 # => couldn't use stretch-slim because of: `dpkg: dependency problems prevent configuration of ca-certificates-java`
 
@@ -87,11 +87,5 @@ ENV PATH="$PATH:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${JAVA_HOME}"
 # Set work dir
 WORKDIR /test
 
-COPY *.sh /test/
-
-RUN chmod +x /test/*.sh && \
-    cd /test && \
-    ./installDM.sh && \
-    ./installDG.sh
 
 CMD [ "bash" ]

@@ -1,4 +1,4 @@
-FROM dm:latest
+FROM base:latest
 # FROM debian:stretch-slim
 # => couldn't use stretch-slim because of: `dpkg: dependency problems prevent configuration of ca-certificates-java`
 
@@ -11,6 +11,6 @@ COPY *.sh /test/
 
 RUN chmod +x /test/*.sh && \
     cd /test && \
-    ./installDG.sh
+    ./installDM.sh
 
 CMD [ "bash" ]

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 cd droidgram
 
 OUTPUT_DIR=/test/experiment/output
@@ -47,6 +48,6 @@ do
 done
 
 echo "Summary"
-cat ${OUTPUT_DIR}/apks/summary.txt
+cat ${OUTPUT_DIR}/summary.txt
 
 echo "Done"

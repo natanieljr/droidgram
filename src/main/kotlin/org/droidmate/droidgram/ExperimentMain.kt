@@ -54,7 +54,11 @@ object ExperimentMain {
             val seedList = data.inputs
 
             seedList.forEachIndexed { seed, inputs ->
-                val seedDir = mainCfg.droidmateOutputDirPath.resolve("seed$seed")
+                val seedDir = if (data.seedNr == -1) {
+                    mainCfg.droidmateOutputDirPath.resolve("seed$seed")
+                } else {
+                    mainCfg.droidmateOutputDirPath.resolve("seed${data.seedNr}")
+                }
                 val seedArgs = arrayOf(*args, "--Output-outputDir=$seedDir")
                 val seedCfg = ExplorationAPI.config(seedArgs, *extraCmdOptions())
 

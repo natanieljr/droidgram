@@ -28,18 +28,19 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
     }
 
     private val inputFiles: List<Path> by lazy {
+        val seedNrStr = seedNr.toString().padStart(2, '0')
+
         val files = Files.walk(inputDir)
             .filter {
-                it.fileName.toString().startsWith("input") &&
+                it.fileName.toString().startsWith("inputs") &&
                         it.fileName.toString().endsWith(".txt")
             }
-            .filter { it.fileName.toString().endsWith("$seedNr.txt") || seedNr == -1 }
+            .filter { it.fileName.toString() == "inputs$seedNrStr.txt" || seedNr == -1 }
             .toList()
             .sorted()
 
-        if (files.isEmpty()) {
-            throw IllegalArgumentException("Input directory doesn't contain any input file (inputs*.txt)")
-        }
+        check(files.isEmpty()) { "Input directory doesn't contain any input file (inputs*.txt)" }
+        check(seedNr == -1 || files.size == 1) { "Multiple input files were found for the same seed" }
 
         files
     }

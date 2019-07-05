@@ -48,7 +48,7 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
         }
     }
 
-    private val translationTableFile: Path by lazy {
+    private val translationTableFile by lazy {
         val file = Files.walk(inputDir)
             .filter {
                 it.fileName.toString().toLowerCase() == "translationtable.txt"

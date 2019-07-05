@@ -349,7 +349,7 @@ object ResultBuilder {
             }
 
         sb.lineSequence().forEach { line ->
-            print(line)
+            println(line)
         }
     }
 }

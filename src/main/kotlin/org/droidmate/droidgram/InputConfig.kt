@@ -1,29 +1,25 @@
 package org.droidmate.droidgram
 
 import org.droidmate.configuration.ConfigurationWrapper
+import org.droidmate.droidgram.mining.coveragePerAction
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.UUID
 import kotlin.streams.toList
 
-class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: ConfigurationWrapper) {
-    val inputDir by lazy { Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath() }
+class InputConfig constructor(cfg: ConfigurationWrapper) {
+    val inputDir: Path by lazy {
+        check(cfg.contains(CommandLineConfig.inputDir)) { "Input directory not set. Use -i <PATH> to set the path" }
+        check(Files.isDirectory(inputDir)) { "Input directory $inputDir does not exist" }
+
+        Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath()
+    }
     val seedNr by lazy {
         if (cfg.contains(CommandLineConfig.seedNr)) {
             cfg[CommandLineConfig.seedNr]
         } else {
             -1
-        }
-    }
-
-    init {
-        if (!cfg.contains(CommandLineConfig.inputDir)) {
-            throw IllegalArgumentException("Input directory not set. Use -i <PATH> to set the path")
-        }
-
-        if (!Files.isDirectory(inputDir)) {
-            throw IllegalArgumentException("Input directory $inputDir does not exist")
         }
     }
 
@@ -60,7 +56,8 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
             .toList()
             .firstOrNull()
 
-        file ?: throw IllegalArgumentException("Input directory doesn't contain a translation table (translationTable.txt)")
+        check(file != null) { "Input directory doesn't contain a translation table (translationTable.txt)" }
+        file
     }
 
     val translationTable: Map<String, UUID> by lazy {
@@ -84,21 +81,14 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
                 .filter { it.fileName.toString().takeLastWhile { p -> p != '-' }.toLongOrNull() != null }
                 .toList()
 
-        if (files.isEmpty()) {
-            throw IllegalArgumentException("No instrumentation files found")
-        } else {
-            files
-        }
+        check(files.isNotEmpty()) { "No instrumentation files found" }
+
+        files
     }
 
     val coverage: Set<Long> by lazy {
-        coverageFiles.flatMap { coverageFile ->
-            val data = Files.readAllLines(coverageFile)
-
-            data.filter { it.isNotEmpty() }
-                .map { it.takeWhile { char -> char != ';' } }
-                .map { it.toLong() }
-                .toList()
-        }.toSet()
+        coveragePerAction(coverageFiles).values
+            .flatten()
+            .toSet()
     }
 }

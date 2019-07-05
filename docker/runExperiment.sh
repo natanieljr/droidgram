@@ -3,8 +3,8 @@ cd droidgram
 OUTPUT_DIR=/test/experiment/output
 INPUT_DIR=/test/experiment/input
 APKS_DIR=/test/experiment/apks
-NR_SEEDS=10
-ACTION_LIMIT=10
+NR_SEEDS=11
+ACTION_LIMIT=1000
 
 mkdir ${INPUT_DIR}
 chmod 777 ${INPUT_DIR}
@@ -43,7 +43,7 @@ do
 	cd droidgram
 
 	echo "Running grammar inputs from ${INPUT_DIR}/${APKS_DIR}"
-	./gradlew run --args="-i ${INPUT_DIR}/apks/ -s ${s}  --Exploration-apksDir=${APKS_DIR} --Output-outputDir=${OUTPUT_DIR} --Exploration-launchActivityDelay=3000 --Exploration-widgetActionDelay=800 --Selectors-randomSeed=1 --Deploy-installApk=true --Deploy-uninstallApk=true --Selectors-pressBackProbability=0.00 --StatementCoverage-enableCoverage=true"
+	./gradlew run --args="-i ${INPUT_DIR}/apks/ -s ${s}  --Exploration-apksDir=${APKS_DIR} --Output-outputDir=${OUTPUT_DIR} --Exploration-launchActivityDelay=3000 --Exploration-widgetActionDelay=800 --Selectors-randomSeed=1 --Deploy-installApk=true --Deploy-uninstallApk=true --Selectors-pressBackProbability=0.00 --StatementCoverage-enableCoverage=true" || true
 done
 
 echo "Summary"

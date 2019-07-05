@@ -39,8 +39,8 @@ class InputConfig @Throws(IllegalArgumentException::class) constructor(cfg: Conf
             .toList()
             .sorted()
 
-        check(files.isEmpty()) { "Input directory doesn't contain any input file (inputs*.txt)" }
-        check(seedNr == -1 || files.size == 1) { "Multiple input files were found for the same seed" }
+        check(files.isNotEmpty()) { "Input directory $inputDir doesn't contain any input file (inputs*.txt)" }
+        check(seedNr == -1 || files.size == 1) { "Multiple input files were found for the same seed $seedNrStr" }
 
         files
     }

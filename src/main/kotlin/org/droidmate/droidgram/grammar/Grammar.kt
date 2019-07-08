@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder
 class Grammar @JvmOverloads constructor(
     private val startSymbol: String = "<start>",
     private val emptySymbol: String = "<empty>",
-    // val nonTerminalRegex: Regex = defaultNonTerminalRegex,
     initialGrammar: Map<String, Set<String>> =
         mapOf(
             emptySymbol to setOf(""),
@@ -53,7 +52,8 @@ class Grammar @JvmOverloads constructor(
 
     fun removeSingleStateTransitions() {
         val singleState = grammar.entries
-            .filter { it.key.contains("(") }
+            .filterNot { it.key.startsWith("<s") } // .contains("(") }
+            .filterNot { listOf("<empty>", "<start>").contains(it.key) }
             .filter { it.value.size == 1 && it.value.any { p -> p != "<empty>" } }
 
         singleState.forEach { entry ->
@@ -61,7 +61,9 @@ class Grammar @JvmOverloads constructor(
             val newValue = entry.value.first { it != "<empty>" }
 
             grammar.replaceAll { _, v ->
-                v.map { it.replace(oldValue, newValue) }.toMutableSet()
+                v.map {
+                    it.replace(oldValue, newValue)
+                }.toMutableSet()
             }
             grammar.remove(oldValue)
         }
@@ -82,6 +84,28 @@ class Grammar @JvmOverloads constructor(
             grammar.remove(entry.key)
         }
     }
+
+    /*
+    fun injectStatements(statementsPerProduction: Map<Pair<String, String>, Set<Long>>) {
+        statementsPerProduction.forEach { (key, statements) ->
+            val nonTerminal = key.first
+            val resultState = key.second
+            grammar[nonTerminal]?.let {
+                val entry = it.first { p -> p.contains(resultState) }
+                val nonTerminalStatements = statements.map { s -> "<@$s>" }
+
+                it.remove(entry)
+                it.add("${entry.replace(resultState, "")} ${nonTerminalStatements.joinToString(" ")}")
+
+                nonTerminalStatements.forEach { p ->
+                    addRule(p, "")
+                }
+
+                grammar[nonTerminalStatements.last()]?.add(resultState)
+            }
+        }
+    }
+    */
 
     /**
      * When an action points to a state an the next action is a reset.
@@ -168,8 +192,6 @@ class Grammar @JvmOverloads constructor(
                 "'${("$key'").padEnd(20)} : \t\t[${value.joinToString(", ") { "'$it'" } }],"
             }.joinToString("\n")
     }
-
-    // private fun String.nonTerminals() = nonTerminals(nonTerminalRegex)
 
     private fun reachableNonTerminals(
         symbol: String = startSymbol,

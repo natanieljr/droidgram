@@ -18,15 +18,52 @@ import java.nio.file.Paths
 import java.util.function.BiPredicate
 import kotlin.streams.toList
 
-class GrammarExtractor(private val mModelDir: Path) {
+class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Path?) {
     private val mIdMapping = mutableMapOf<String, String>()
+    // private val mIdCoverageMapping = mutableMapOf<Pair<String, String>, MutableSet<Long>>()
     private val mGrammar = Grammar()
     private val mStatesDir = mModelDir.resolve("states")
     private var mIsInitialized = false
 
+    private val coveragePerAction by lazy {
+        if (mCoverageDir == null) {
+            emptyMap()
+        } else {
+            check(Files.exists(mCoverageDir)) { "Coverage dir $mCoverageDir does not exist" }
+            check(Files.isDirectory(mCoverageDir)) { "Coverage dir $mCoverageDir is not a directory" }
+
+            val coverageFiles = Files.list(mCoverageDir)
+                .filter { it.fileName.toString().contains("-statements-") }
+                .toList()
+
+            coveragePerAction(coverageFiles)
+        }
+    }
+
+    private fun actionCoverage(actionId: Int): String {
+        val linesOfCode = coveragePerAction
+            .getOrDefault(actionId, emptySet())
+
+        /*linesOfCode.forEach { loc ->
+            mGrammar.addRule("<$loc>", loc.toString())
+        }
+
+        return linesOfCode.joinToString(" ") { "<$it>" }*/
+
+        return linesOfCode.joinToString(" ")
+    }
+
     private fun String.getUUID(): String {
         return this.split("_").firstOrNull().orEmpty()
     }
+
+    /*
+    private fun mapCoverage(nonTerminal: String, resultState: String, actionId: Int) {
+        val key = Pair(nonTerminal, resultState)
+        mIdCoverageMapping.putIfAbsent(key, mutableSetOf())
+        mIdCoverageMapping[key]?.addAll(coveragePerAction.getOrDefault(actionId, emptySet()))
+    }
+    */
 
     private fun String.getId(prefix: String): String {
         val uuid = this.getUUID()
@@ -98,7 +135,8 @@ class GrammarExtractor(private val mModelDir: Path) {
         sourceStateConcreteId: String,
         resultStateConcreteId: String,
         widgetId: String,
-        textualData: String
+        textualData: String,
+        actionId: Int
     ) {
         val sourceStateUID = sourceStateConcreteId.getId("s")
         val sourceStateNonTerminal = "<$sourceStateUID>"
@@ -108,13 +146,6 @@ class GrammarExtractor(private val mModelDir: Path) {
             resultStateConcreteId.belongsToApp() -> resultStateConcreteId.getId("s")
             else -> ""
         }
-        /*
-        if (resultStateConcreteId.belongsToApp()) {
-            resultStateConcreteId.getId("s")
-        } else {
-            ""
-        }
-        */
 
         val widgetUID = if (widgetId != "null") {
             widgetId.getId("w")
@@ -132,10 +163,23 @@ class GrammarExtractor(private val mModelDir: Path) {
 
         when (action) {
             LaunchApp.name -> {
-                mGrammar.addRule("<start>", resultStateNonTerminal)
+                val terminal = if (this.mCoverageDir == null) {
+                    ""
+                } else {
+                    // Launch app is a queue as follows: start queue, launch, enable wifi, close keyboard, end queue
+                    // Start needs +3 because it uses the action Queue ID which is +1[wifi] +1[keyboard +1[end queue].
+                    actionCoverage(actionId + 3)
+                }
+
+                val productionRule = "$terminal $resultStateNonTerminal"
+                mGrammar.addRule("<start>", productionRule)
             }
             ActionType.PressBack.name -> {
-                val terminal = "$action($sourceStateUID)"
+                val terminal = if (this.mCoverageDir == null) {
+                    "$action($sourceStateUID)"
+                } else {
+                    actionCoverage(actionId)
+                }
                 val nonTerminal = "<$action($sourceStateUID)>"
                 val productionRule = "$terminal $nonTerminal"
 
@@ -149,7 +193,11 @@ class GrammarExtractor(private val mModelDir: Path) {
                 mGrammar.addRule(productionRule, "<empty>")
             }
             else -> {
-                val terminal = "$action($widgetUID$textualData)"
+                val terminal = if (this.mCoverageDir == null) {
+                    "$action($widgetUID$textualData)"
+                } else {
+                    actionCoverage(actionId)
+                }
                 val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
                 val productionRule = "$terminal $nonTerminal"
 
@@ -185,11 +233,13 @@ class GrammarExtractor(private val mModelDir: Path) {
                 else -> ""
             }
 
+            val actionId = data.last().toInt()
+
             // Create only if action was in the app or is launch/back
             if (action.isLaunchApp() || action.isPressBack() || sourceStateConcreteId.belongsToApp()) {
                 // Pressed back after a start.
                 if (action.isPressBack() && previousSourceStateConcreteId == "") {
-                    createProduction(LaunchApp.name, "", sourceStateConcreteId, "", "")
+                    createProduction(LaunchApp.name, "", sourceStateConcreteId, "", "", actionId)
                 }
 
                 // If state was already used on the right side of an expression, it can be used.
@@ -204,7 +254,7 @@ class GrammarExtractor(private val mModelDir: Path) {
                     "No source id identified for entry $entry"
                 }
 
-                createProduction(action, sourceId, resultStateConcreteId, widgetId, payload)
+                createProduction(action, sourceId, resultStateConcreteId, widgetId, payload, actionId)
                 previousSourceStateConcreteId = sourceId
             } else {
                 log.warn("State $sourceStateConcreteId does not belong to the app. Ignoring it")
@@ -219,23 +269,21 @@ class GrammarExtractor(private val mModelDir: Path) {
      */
     private fun postProcessGrammar() {
         mGrammar.removeNonExistingStates()
-        mGrammar.mergeEquivalentTransitions()
         mGrammar.removeTerminateActions()
-        mGrammar.removeSingleStateTransitions()
+        if (mCoverageDir == null) {
+            mGrammar.removeSingleStateTransitions()
+            mGrammar.mergeEquivalentTransitions()
+        }
         mGrammar.removeUnusedSymbols()
     }
 
     val grammar by lazy {
-        if (!mIsInitialized) {
-            throw IllegalStateException("Grammar has not been initialized")
-        }
+        check(mIsInitialized) { "Grammar has not been initialized" }
         mGrammar
     }
 
     val mapping by lazy {
-        if (!mIsInitialized) {
-            throw IllegalStateException("Grammar has not been initialized")
-        }
+        check(mIsInitialized) { "Grammar has not been initialized" }
 
         mIdMapping
             .map { Pair(it.value, it.key) }
@@ -247,32 +295,28 @@ class GrammarExtractor(private val mModelDir: Path) {
         private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
 
         @JvmStatic
-        fun main(args: Array<String>) {
-            val inputDir = (
-                    Files.list(Paths.get(args.firstOrNull()))
-                        .toList()
-                        .sorted()
-                        .firstOrNull { Files.isDirectory(it) } ?: throw IOException("Missing model dir path")
-                    ).toAbsolutePath()
+        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path?) {
+            val fileNameSuffix = if (coverageDir == null) {
+                ""
+            } else {
+                "WithCoverage"
+            }
 
-            val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
-                .toAbsolutePath()
-
-            val extractor = GrammarExtractor(inputDir)
-
+            val extractor = GrammarExtractor(inputDir, coverageDir)
             extractor.extractGrammar()
+
             val grammarJSON = extractor.grammar.asJsonStr()
-            val grammarFile = outputDir.resolve("grammar.txt")
+            val grammarFile = outputDir.resolve("grammar$fileNameSuffix.txt")
             Files.write(grammarFile, grammarJSON.toByteArray())
 
             val mapping = StringBuilder()
             extractor.mapping
                 .toSortedMap()
-                .forEach { key, value ->
+                .forEach { (key, value) ->
                     mapping.appendln("$key;$value")
                 }
 
-            val mappingFile = outputDir.resolve("translationTable.txt")
+            val mappingFile = outputDir.resolve("translationTable$fileNameSuffix.txt")
             Files.write(mappingFile, mapping.toString().toByteArray())
 
             println("Grammar:")
@@ -281,6 +325,30 @@ class GrammarExtractor(private val mModelDir: Path) {
 
             println("\nMapping: $mappingFile")
             print(mapping.toString())
+        }
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            check(args.isNotEmpty()) { "Missing model dir argument" }
+            val inputDir = (
+                    Files.list(Paths.get(args.first()))
+                        .toList()
+                        .sorted()
+                        .firstOrNull { Files.isDirectory(it) } ?: throw IOException("Missing model dir path")
+                    ).toAbsolutePath()
+
+            val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
+                .toAbsolutePath()
+
+            val isUiGrammar = args.size == 2
+
+            if (isUiGrammar) {
+                extractGrammar(inputDir, outputDir, null)
+            } else {
+                val coverageDir = inputDir.parent.resolveSibling("coverage")
+                check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
+                extractGrammar(inputDir, outputDir, coverageDir)
+            }
         }
     }
 }

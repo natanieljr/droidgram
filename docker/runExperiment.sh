@@ -24,7 +24,6 @@ rm -rf ${INPUT_DIR}/apks/*.txt
 mkdir ${INPUT_DIR}/apks
 
 echo "Running initial exploration and storing data into ${OUTPUT_DIR}"
-echo "Running initial exploration and storing data into ${OUTPUT_DIR}"
 ./gradlew run --args="run --Exploration-apksDir=${APKS_DIR} --Exploration-launchActivityDelay=5000 --Exploration-widgetActionDelay=800 --Selectors-actionLimit=${ACTION_LIMIT} --Selectors-resetEvery=50 --Selectors-randomSeed=1 --Deploy-installApk=true --Deploy-uninstallApk=true --Selectors-pressBackProbability=0.00 --StatementCoverage-enableCoverage=true --Output-outputDir=${INPUT_DIR}/apks/droidMate"
 
 echo "Extracting grammar from ${INPUT_DIR}/apks/"

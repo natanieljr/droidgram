@@ -19,14 +19,27 @@ data class GrammarInput(val grammarId: String, val widget: UUID, val action: Str
         val empty: GrammarInput
             get() = GrammarInput("empty", "empty".toUUID(), "empty", "empty")
 
-        fun fromString(input: String, translationTable: Map<String, UUID>): GrammarInput {
+        fun fromString(oiginalInput: String, translationTable: Map<String, UUID>): GrammarInput {
+            val input = oiginalInput
+                .replace("<", "")
+                .replace(">", "")
             val action = input.split("(").first()
-            val widget = input.removePrefix("$action(").removeSuffix(")").split(",").first()
+            var widget = input
+                .removePrefix("$action(")
+                .removeSuffix(")")
+                .split(",")
+                .first()
+
+            if (widget.contains(".")) {
+                widget = widget.split(".").last()
+            }
 
             assert(widget != "null") { "Widget must be not null" }
 
             val textualData = if (input.contains(",")) {
-                input.removeSuffix(")").split(",").last()
+                input.removeSuffix(")")
+                    .split(",")
+                    .last()
             } else {
                 ""
             }

@@ -42,6 +42,7 @@ class GrammarReplayMF(
         generatedInput
             .split(" ")
             .filter { it.isNotEmpty() }
+            .filter { it.contains("(") }
             .flatMap {
                 val actionInput =
                     GrammarInput.fromString(it, translationTable)

@@ -20,7 +20,6 @@ import kotlin.streams.toList
 
 class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Path?) {
     private val mIdMapping = mutableMapOf<String, String>()
-    // private val mIdCoverageMapping = mutableMapOf<Pair<String, String>, MutableSet<Long>>()
     private val mGrammar = Grammar()
     private val mStatesDir = mModelDir.resolve("states")
     private var mIsInitialized = false
@@ -44,26 +43,12 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         val linesOfCode = coveragePerAction
             .getOrDefault(actionId, emptySet())
 
-        /*linesOfCode.forEach { loc ->
-            mGrammar.addRule("<$loc>", loc.toString())
-        }
-
-        return linesOfCode.joinToString(" ") { "<$it>" }*/
-
         return linesOfCode.joinToString(" ")
     }
 
     private fun String.getUUID(): String {
         return this.split("_").firstOrNull().orEmpty()
     }
-
-    /*
-    private fun mapCoverage(nonTerminal: String, resultState: String, actionId: Int) {
-        val key = Pair(nonTerminal, resultState)
-        mIdCoverageMapping.putIfAbsent(key, mutableSetOf())
-        mIdCoverageMapping[key]?.addAll(coveragePerAction.getOrDefault(actionId, emptySet()))
-    }
-    */
 
     private fun String.getId(prefix: String): String {
         val uuid = this.getUUID()

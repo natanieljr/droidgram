@@ -14,6 +14,7 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         self.last_symbol = ""
         self.last_symbol_count = 0
         self.non_terminal_inputs = False
+        self._cache = {}
 
     def expansion_key(self, symbol, expansion):
         """Convert (symbol, children) into a key. `children` can be an expansion string or a derivation tree."""
@@ -48,46 +49,62 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         if max_depth <= 0:
             return set()
 
+        key = (symbol, max_depth)
+        if key in self._cache:
+            if self.log:
+                print("Using cached data for (%s, %d)" % key)
+            return set(filter(lambda x: x not in self.covered_expansions, self._cache[key]))
+
         expansions = set()
         self._symbols_seen.add(symbol)
         Q = [symbol]
 
-        curDepth = 0
-        elementsToDepthIncrease = 1
-        nextElementsToDepthIncrease = 0
+        cur_depth = 0
+        elements_to_depth_increase = 1
+        next_elements_to_depth_increase = 0
 
-        while Q != []:
+        while Q:
             current = Q.pop(0)
             sum = 0
 
-            #process
-            seen_non_terminals = []
+            # process
+            # seen_non_terminals = []
             for expansion in self.grammar[current]:
-                new_exp = self.expansion_key(current, expansion)
+                new_exp = filter(lambda x: x not in self.covered_expansions, self.expansion_key(current, expansion))
                 for exp in new_exp:
                     expansions.add(exp)
                 for nonterminal in nonterminals(expansion):
-                    if nonterminal not in self._symbols_seen:
+                    if (nonterminal, cur_depth) in self._cache:
+                        new_exp = filter(lambda x: x not in self.covered_expansions,
+                                         self._cache[(nonterminal, cur_depth)])
+                        for exp in new_exp:
+                            expansions.add(exp)
+                    elif nonterminal not in self._symbols_seen:
                         sum += 1
                         Q.append(nonterminal)
-                        seen_non_terminals.append(nonterminal)
-                        #self._symbols_seen.add(nonterminal) #moved below
-            #end process
+                        # seen_non_terminals.append(nonterminal)
+                        self._symbols_seen.add(nonterminal)  # moved below
+            # end process
 
-            #bookkeeping for iterative BFS with depth limiting
-            nextElementsToDepthIncrease += sum
-            elementsToDepthIncrease -= 1
-            if (elementsToDepthIncrease == 0):
-                curDepth += 1
-                if curDepth >= max_depth:
-                    return expansions
-                elementsToDepthIncrease = nextElementsToDepthIncrease
-                nextElementsToDepthIncrease = 0
+            # bookkeeping for iterative BFS with depth limiting
+            next_elements_to_depth_increase += sum
+            elements_to_depth_increase -= 1
+            if elements_to_depth_increase == 0:
+                if cur_depth > 0:
+                    self._cache[(symbol, cur_depth-1)] = expansions
+                cur_depth += 1
+                if cur_depth >= max_depth:
+                    break
 
-            #It's safer to do it here, not in loop above, in order to avoid pruning tuples that have the same nonterminals but different terminals on same depth
-            for nt in seen_non_terminals:
-                self._symbols_seen.add(nt)
+                elements_to_depth_increase = next_elements_to_depth_increase
+                next_elements_to_depth_increase = 0
 
+            # It's safer to do it here, not in loop above, in order to avoid pruning
+            # tuples that have the same nonterminals but different terminals on same depth
+            # for nt in seen_non_terminals:
+            #    self._symbols_seen.add(nt)
+
+        self._cache[key] = expansions
         return expansions
 
     def use_non_terminals_input(self, value):
@@ -131,10 +148,27 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
 
         return index_map[index]
 
+    def new_coverages(self, node, possible_children):
+        """Return coverage to be obtained for each child at minimum depth"""
+        (symbol, children) = node
+        for max_depth in range(len(self.grammar)):
+            print("Looking for best element in depth %d of %d" % (max_depth, len(self.grammar)))
+            new_coverages = [
+                self.new_child_coverage(symbol, c, max_depth)
+                for c in possible_children]
+            max_new_coverage = max(len(new_coverage)
+                                   for new_coverage in new_coverages)
+            if max_new_coverage > 0:
+                # Uncovered node found
+                return new_coverages
+
+        # All covered
+        return None
+
     def new_child_coverage(self, symbol, children, max_depth=float('inf')):
         """Return new coverage that would be obtained by expanding (symbol, children)"""
         new_cov = self._new_child_coverage(children, max_depth)
-        new_exp = self.expansion_key(symbol, children)
+        new_exp = filter(lambda x: x not in self.covered_expansions, self.expansion_key(symbol, children))
         for exp in new_exp:
             new_cov.add(exp)
         new_cov -= self.expansion_coverage()   # -= is set subtraction
@@ -180,10 +214,10 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         # Save the expansion as covered
         keys = self.expansion_key(symbol, new_children)
 
-        if self.log:
-            print("Now covered:", keys)
-
         for key in keys:
+            if self.log:
+                print("Now covered:", key)
+
             self.covered_expansions.add(key)
 
         return index_map[new_children_index]

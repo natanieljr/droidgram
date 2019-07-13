@@ -15,6 +15,7 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
 
         Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath()
     }
+
     val seedNr by lazy {
         if (cfg.contains(CommandLineConfig.seedNr)) {
             cfg[CommandLineConfig.seedNr]
@@ -23,15 +24,34 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
         }
     }
 
+    val useCoverage by lazy {
+        if (cfg.contains(CommandLineConfig.useCoverageGrammar)) {
+            cfg[CommandLineConfig.useCoverageGrammar]
+        } else {
+            false
+        }
+    }
+
+    private fun Path.isInputFile(seedNr: Int): Boolean {
+        val seedNrStr = seedNr.toString().padStart(2, '0')
+        val inputFileName = if (useCoverage) {
+            "coverageInputs"
+        } else {
+            "inputs"
+        }
+
+        val candidateName = this.fileName.toString()
+
+        return candidateName.startsWith(inputFileName) &&
+                candidateName.endsWith(".txt") &&
+                (candidateName == "inputs$seedNrStr.txt" || seedNr == -1)
+    }
+
     private val inputFiles: List<Path> by lazy {
         val seedNrStr = seedNr.toString().padStart(2, '0')
 
         val files = Files.walk(inputDir)
-            .filter {
-                it.fileName.toString().startsWith("inputs") &&
-                        it.fileName.toString().endsWith(".txt")
-            }
-            .filter { it.fileName.toString() == "inputs$seedNrStr.txt" || seedNr == -1 }
+            .filter { it.isInputFile(seedNr) }
             .toList()
             .sorted()
 
@@ -49,14 +69,20 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
     }
 
     private val translationTableFile by lazy {
+        val translationTableName = if (useCoverage) {
+            "translationTableWithCoverage.txt"
+        } else {
+            "translationTable.txt"
+        }.toLowerCase()
+
         val file = Files.walk(inputDir)
             .filter {
-                it.fileName.toString().toLowerCase() == "translationtable.txt"
+                it.fileName.toString().toLowerCase() == translationTableName
             }
             .toList()
             .firstOrNull()
 
-        check(file != null) { "Input directory doesn't contain a translation table (translationTable.txt)" }
+        check(file != null) { "Input directory doesn't contain a translation table ($translationTableName)" }
         file
     }
 

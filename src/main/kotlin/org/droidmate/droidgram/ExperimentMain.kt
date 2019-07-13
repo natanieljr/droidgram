@@ -28,6 +28,12 @@ object ExperimentMain {
             description = "Number of the seed to be processed.",
             short = "s",
             metavar = "Int"
+        ),
+        CommandLineOption(
+            CommandLineConfig.useCoverageGrammar,
+            description = "Use coverage grammar inputs.",
+            short = "cg",
+            metavar = "Booloean"
         )
     )
 

@@ -11,9 +11,12 @@ import kotlin.streams.toList
 class InputConfig constructor(cfg: ConfigurationWrapper) {
     val inputDir: Path by lazy {
         check(cfg.contains(CommandLineConfig.inputDir)) { "Input directory not set. Use -i <PATH> to set the path" }
-        check(Files.isDirectory(inputDir)) { "Input directory $inputDir does not exist" }
 
-        Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath()
+        val dir = Paths.get(cfg[CommandLineConfig.inputDir].path).toAbsolutePath()
+
+        check(Files.isDirectory(dir)) { "Input directory $dir does not exist" }
+
+        dir
     }
 
     val seedNr by lazy {

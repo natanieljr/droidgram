@@ -47,7 +47,7 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
 
         return candidateName.startsWith(inputFileName) &&
                 candidateName.endsWith(".txt") &&
-                (candidateName == "inputs$seedNrStr.txt" || seedNr == -1)
+                (candidateName == "$inputFileName$seedNrStr.txt" || seedNr == -1)
     }
 
     private val inputFiles: List<Path> by lazy {

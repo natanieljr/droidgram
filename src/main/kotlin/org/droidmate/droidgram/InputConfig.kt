@@ -58,7 +58,15 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
             .toList()
             .sorted()
 
-        check(files.isNotEmpty()) { "Input directory $inputDir doesn't contain any input file (inputs*.txt)" }
+        check(files.isNotEmpty()) {
+            val inputFilePattern = if (useCoverage) {
+                "coverageInputs*.txt"
+            } else {
+                "inputs*.txt"
+            }
+
+            "Input directory $inputDir doesn't contain any input file ($inputFilePattern)"
+        }
         check(seedNr == -1 || files.size == 1) { "Multiple input files were found for the same seed $seedNrStr" }
 
         files

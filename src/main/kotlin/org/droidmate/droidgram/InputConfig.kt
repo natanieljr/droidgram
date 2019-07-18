@@ -2,6 +2,8 @@ package org.droidmate.droidgram
 
 import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.droidgram.mining.coveragePerAction
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -9,6 +11,11 @@ import java.util.UUID
 import kotlin.streams.toList
 
 class InputConfig constructor(cfg: ConfigurationWrapper) {
+    companion object {
+        @JvmStatic
+        private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
+    }
+
     val inputDir: Path by lazy {
         check(cfg.contains(CommandLineConfig.inputDir)) { "Input directory not set. Use -i <PATH> to set the path" }
 
@@ -27,7 +34,7 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
         }
     }
 
-    val useCoverage by lazy {
+    private val useCoverage by lazy {
         if (cfg.contains(CommandLineConfig.useCoverageGrammar)) {
             cfg[CommandLineConfig.useCoverageGrammar]
         } else {
@@ -45,9 +52,13 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
 
         val candidateName = this.fileName.toString()
 
-        return candidateName.startsWith(inputFileName) &&
+        val isInputFile = candidateName.startsWith(inputFileName) &&
                 candidateName.endsWith(".txt") &&
                 (candidateName == "$inputFileName$seedNrStr.txt" || seedNr == -1)
+
+        log.warn("Is input file: $isInputFile: $this")
+
+        return isInputFile
     }
 
     private val inputFiles: List<Path> by lazy {

@@ -247,6 +247,8 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         postProcessGrammar()
+
+        check(mGrammar.isValid()) { "Grammar is invalid" }
     }
 
     /**

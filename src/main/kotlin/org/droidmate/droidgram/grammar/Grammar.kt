@@ -1,6 +1,8 @@
 package org.droidmate.droidgram.grammar
 
 import com.google.gson.GsonBuilder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class Grammar @JvmOverloads constructor(
     private val startSymbol: String = "<start>",
@@ -11,6 +13,11 @@ class Grammar @JvmOverloads constructor(
             startSymbol to setOf(emptySymbol)
         )
 ) {
+    companion object {
+        @JvmStatic
+        private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
+    }
+
     operator fun get(key: String): Set<String>? {
         return grammar[key]
     }
@@ -70,6 +77,8 @@ class Grammar @JvmOverloads constructor(
     }
 
     fun removeUnusedSymbols() {
+        val originalGrammarSize = grammar.size
+
         val unusedEntries = grammar.entries
             .filterNot { x ->
                 grammar.any { y ->
@@ -83,29 +92,11 @@ class Grammar @JvmOverloads constructor(
         unusedEntries.forEach { entry ->
             grammar.remove(entry.key)
         }
-    }
 
-    /*
-    fun injectStatements(statementsPerProduction: Map<Pair<String, String>, Set<Long>>) {
-        statementsPerProduction.forEach { (key, statements) ->
-            val nonTerminal = key.first
-            val resultState = key.second
-            grammar[nonTerminal]?.let {
-                val entry = it.first { p -> p.contains(resultState) }
-                val nonTerminalStatements = statements.map { s -> "<@$s>" }
-
-                it.remove(entry)
-                it.add("${entry.replace(resultState, "")} ${nonTerminalStatements.joinToString(" ")}")
-
-                nonTerminalStatements.forEach { p ->
-                    addRule(p, "")
-                }
-
-                grammar[nonTerminalStatements.last()]?.add(resultState)
-            }
+        if (grammar.size != originalGrammarSize) {
+            this.removeUnusedSymbols()
         }
     }
-    */
 
     /**
      * When an action points to a state an the next action is a reset.
@@ -221,7 +212,7 @@ class Grammar @JvmOverloads constructor(
             val expansions = grammar[definedNonTerminal]
 
             if (expansions.isNullOrEmpty()) {
-                println("Non-terminal $definedNonTerminal: expansion list empty")
+                log.error("Non-terminal $definedNonTerminal: expansion list empty")
             }
 
             expansions.orEmpty().flatMap { expansion -> (expansion.nonTerminals()) }
@@ -244,7 +235,9 @@ class Grammar @JvmOverloads constructor(
             .filterNot { usedNonTerminals.contains(it) }
 
         if (unusedNonTerminals.isNotEmpty()) {
-            unusedNonTerminals.forEach { println("$it defined but not used") }
+            unusedNonTerminals.forEach {
+                log.error("$it defined but not used")
+            }
 
             return false
         }
@@ -253,7 +246,9 @@ class Grammar @JvmOverloads constructor(
             .filterNot { definedNonTerminals.contains(it) }
 
         if (undefinedNonTerminals.isNotEmpty()) {
-            undefinedNonTerminals.forEach { println("$it used but not defined") }
+            undefinedNonTerminals.forEach {
+                log.error("$it used but not defined")
+            }
 
             return false
         }
@@ -262,7 +257,9 @@ class Grammar @JvmOverloads constructor(
         val unreachable = unreachableNonTerminals()
 
         if (unreachable.isNotEmpty()) {
-            unreachable.forEach { println("$it is unreachable from $startSymbol") }
+            unreachable.forEach {
+                log.error("$it is unreachable from $startSymbol")
+            }
 
             return false
         }

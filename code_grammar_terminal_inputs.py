@@ -2,19 +2,21 @@ import json
 import re
 import sys
 
-from fuzzingbook.Grammars import RE_NONTERMINAL, START_SYMBOL, nonterminals
-from fuzzingbook.GrammarFuzzer import all_terminals
+from fuzzingbook.Grammars import RE_NONTERMINAL, nonterminals
+# from fuzzingbook.GrammarFuzzer import all_terminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
 
 class TerminalCoverageGrammar(GrammarCoverageFuzzer):
     def __init__(self, *args, **kwargs):
         # invoke superclass __init__(), passing all arguments
+        self.derivation_tree = []
         super().__init__(*args, **kwargs)
         self.last_symbol = ""
         self.last_symbol_count = 0
         self.non_terminal_inputs = False
         self._cache = {}
+        self._symbols_seen = set()
 
     def expansion_key(self, symbol, expansion):
         """Convert (symbol, children) into a key. `children` can be an expansion string or a derivation tree."""
@@ -22,7 +24,8 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
             expansion = expansion[0]
         if not isinstance(expansion, str):
             children = [((" " + x[0]).replace(" <", "<"), x[1]) for x in expansion]
-            expansion = all_terminals((symbol, children))
+            self._symbols_seen = set()
+            expansion = self.safe_all_terminals((symbol, children))
 
         terminals = list(filter(
             lambda x: "<" not in x,
@@ -57,14 +60,14 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
 
         expansions = set()
         self._symbols_seen.add(symbol)
-        Q = [symbol]
+        queue = [symbol]
 
         cur_depth = 0
         elements_to_depth_increase = 1
         next_elements_to_depth_increase = 0
 
-        while Q:
-            current = Q.pop(0)
+        while queue:
+            current = queue.pop(0)
             sum = 0
 
             # process
@@ -81,7 +84,7 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
                             expansions.add(exp)
                     elif nonterminal not in self._symbols_seen:
                         sum += 1
-                        Q.append(nonterminal)
+                        queue.append(nonterminal)
                         # seen_non_terminals.append(nonterminal)
                         self._symbols_seen.add(nonterminal)  # moved below
             # end process
@@ -116,7 +119,8 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         if self.non_terminal_inputs:
             correct_children = list(filter(lambda x: " " not in x[0], children))
             incorrect_children = list(filter(lambda x: " " in x[0], children))
-            flattened_children = [item for sublist in map(lambda x: x[0].strip().split(" "), incorrect_children) for item in sublist]
+            flattened_children = [item for sublist in map(lambda x: x[0].strip().split(" "), incorrect_children)
+                                  for item in sublist]
             mapped_children = [("%s" % x, []) for x in flattened_children]
 
             return correct_children + mapped_children
@@ -174,7 +178,8 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         new_cov -= self.expansion_coverage()   # -= is set subtraction
         return new_cov
 
-    def get_empty(self, possible_children):
+    @staticmethod
+    def get_empty(possible_children):
         return [idx for idx, child in enumerate(possible_children) if child[0][0] == "<empty>"][0]
 
     def choose_node_expansion(self, node, possible_children):
@@ -182,8 +187,10 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         new_coverages = self.new_coverages(node, possible_children)
 
         if new_coverages is None:
+            self._symbols_seen = set()
             # In a loop, look for empty
-            if ((hasattr(self, 'derivation_tree') and len(all_terminals(self.derivation_tree)) > len(self.grammar)) or
+            if ((hasattr(self, 'derivation_tree') and
+                 len(self.safe_all_terminals(self.derivation_tree)) > len(self.grammar)) or
                 (len(self.covered_expansions) >= len(self.grammar))) and "<empty>" in str(possible_children):
                 return self.get_empty(possible_children)
             else:
@@ -227,20 +234,64 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         if self.non_terminal_inputs:
             return all_non_terminals(self.derivation_tree).replace("<empty>", "")
         else:
-            return all_terminals(self.derivation_tree)
+            self._symbols_seen = set()
+            return self.safe_all_terminals(self.derivation_tree)
+
+    def expand_node_randomly(self, node):
+        (symbol, children) = node
+        assert children is None
+
+        if self.log:
+            print("Expanding", self.safe_all_terminals(node), "randomly")
+
+        # Fetch the possible expansions from grammar...
+        expansions = self.grammar[symbol]
+        possible_children = [self.expansion_to_children(
+            expansion) for expansion in expansions]
+
+        # ... and select a random expansion
+        index = self.choose_node_expansion(node, possible_children)
+        chosen_children = possible_children[index]
+
+        # Process children (for subclasses)
+        chosen_children = self.process_chosen_children(chosen_children,
+                                                       expansions[index])
+
+        # Return with new children
+        return symbol, chosen_children
+
+    def safe_all_terminals(self, tree):
+        (symbol, children) = tree
+
+        if symbol in self._symbols_seen:
+            return symbol
+
+        if children is None:
+            # This is a nonterminal symbol not expanded yet
+            self._symbols_seen.add(symbol)
+            return symbol
+
+        if len(children) == 0:
+            # This is a terminal symbol
+            self._symbols_seen.add(symbol)
+            return symbol
+
+        # This is an expanded symbol:
+        # Concatenate all terminal symbols from all children
+        return ''.join([self.safe_all_terminals(c) for c in children])
 
 
 def generate_inputs(grammar, use_non_terminals):
-    fuzzer = TerminalCoverageGrammar(grammar, min_nonterminals=1, log=True)
-    fuzzer.use_non_terminals_input(use_non_terminals)
-    max_exp = fuzzer.max_expansion_coverage(max_depth=len(grammar))
+    fuzz = TerminalCoverageGrammar(grammar, min_nonterminals=1, log=True)
+    fuzz.use_non_terminals_input(use_non_terminals)
+    max_exp = fuzz.max_expansion_coverage(max_depth=len(grammar))
     reached = set()
 
     count = 0
-    while len(max_exp - fuzzer.expansion_coverage()) > 0:
-        original_set_diff = max_exp - fuzzer.expansion_coverage()
-        inp = fuzzer.fuzz()
-        new_set_diff = max_exp - fuzzer.expansion_coverage()
+    while len(max_exp - fuzz.expansion_coverage()) > 0:
+        original_set_diff = max_exp - fuzz.expansion_coverage()
+        inp = fuzz.fuzz()
+        new_set_diff = max_exp - fuzz.expansion_coverage()
 
         if len(original_set_diff - new_set_diff) > 0:
             count = 0
@@ -312,16 +363,16 @@ if __name__ == "__main__":
     package = sys.argv[2]
 
     if len(sys.argv) >= 4:
-        num_inputs = int(sys.argv[3])
+        inputs = int(sys.argv[3])
     else:
-        num_inputs = 10
+        inputs = 10
 
     if len(sys.argv) >= 5:
-        use_non_terminals = sys.argv[4] == '1' or sys.argv[4].lower() == 'true'
+        non_terminals = sys.argv[4] == '1' or sys.argv[4].lower() == 'true'
     else:
-        use_non_terminals = False
+        non_terminals = False
 
-    generate_experiments_inputs(input_d, package, num_inputs, use_non_terminals)
+    generate_experiments_inputs(input_d, package, inputs, non_terminals)
 
 
 """

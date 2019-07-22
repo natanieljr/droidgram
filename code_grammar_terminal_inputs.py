@@ -7,6 +7,18 @@ from fuzzingbook.Grammars import RE_NONTERMINAL, nonterminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
 
+class recursion_limit:
+    def __init__(self, limit):
+        self.limit = limit
+        self.old_limit = sys.getrecursionlimit()
+
+    def __enter__(self):
+        sys.setrecursionlimit(self.limit)
+
+    def __exit__(self, type, value, tb):
+        sys.setrecursionlimit(self.old_limit)
+
+
 class TerminalCoverageGrammar(GrammarCoverageFuzzer):
     def __init__(self, *args, **kwargs):
         # invoke superclass __init__(), passing all arguments
@@ -293,18 +305,19 @@ def generate_inputs(grammar, use_non_terminals):
     count = 0
     while len(max_exp - fuzz.expansion_coverage()) > 0:
         original_set_diff = max_exp - fuzz.expansion_coverage()
-        inp = fuzz.fuzz()
-        new_set_diff = max_exp - fuzz.expansion_coverage()
+        with recursion_limit(15000):
+            inp = fuzz.fuzz()
+            new_set_diff = max_exp - fuzz.expansion_coverage()
 
-        if len(original_set_diff - new_set_diff) > 0:
-            count = 0
-            reached.add(inp)
-        elif original_set_diff == new_set_diff:
-            count += 1
-            if count > 3:
-                print("Unable to produce %d elements with the grammar (%.2f)" %
-                      (len(new_set_diff), len(new_set_diff) / len(max_exp)))
-                break
+            if len(original_set_diff - new_set_diff) > 0:
+                count = 0
+                reached.add(inp)
+            elif original_set_diff == new_set_diff:
+                count += 1
+                if count > 3:
+                    print("Unable to produce %d elements with the grammar (%.2f)" %
+                          (len(new_set_diff), len(new_set_diff) / len(max_exp)))
+                    break
 
     return reached
 

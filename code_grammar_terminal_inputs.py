@@ -261,6 +261,9 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         return symbol, chosen_children
 
     def safe_all_terminals(self, tree):
+        if tree is None:
+            return ''
+
         (symbol, children) = tree
 
         if symbol in self._symbols_seen:

@@ -282,7 +282,7 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
 
 
 def generate_inputs(grammar, use_non_terminals):
-    fuzz = TerminalCoverageGrammar(grammar, min_nonterminals=1, log=True)
+    fuzz = TerminalCoverageGrammar(grammar, min_nonterminals=1, log=False)
     fuzz.use_non_terminals_input(use_non_terminals)
     max_exp = fuzz.max_expansion_coverage(max_depth=len(grammar))
     reached = set()

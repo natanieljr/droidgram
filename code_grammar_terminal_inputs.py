@@ -3,7 +3,6 @@ import re
 import sys
 
 from fuzzingbook.Grammars import RE_NONTERMINAL, nonterminals
-# from fuzzingbook.GrammarFuzzer import all_terminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
 
@@ -126,7 +125,7 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         self.non_terminal_inputs = value
 
     def expansion_to_children(self, expansion):
-        children = super(GrammarCoverageFuzzer, self).expansion_to_children(expansion)
+        children = super().expansion_to_children(expansion)
 
         if self.non_terminal_inputs:
             correct_children = list(filter(lambda x: " " not in x[0], children))
@@ -193,6 +192,10 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
     @staticmethod
     def get_empty(possible_children):
         return [idx for idx, child in enumerate(possible_children) if child[0][0] == "<empty>"][0]
+
+    def possible_expansions(self, node):
+        with recursion_limit(5000):
+            return super().possible_expansions(node)
 
     def choose_node_expansion(self, node, possible_children):
         (symbol, children) = node
@@ -305,19 +308,18 @@ def generate_inputs(grammar, use_non_terminals):
     count = 0
     while len(max_exp - fuzz.expansion_coverage()) > 0:
         original_set_diff = max_exp - fuzz.expansion_coverage()
-        with recursion_limit(15000):
-            inp = fuzz.fuzz()
-            new_set_diff = max_exp - fuzz.expansion_coverage()
+        inp = fuzz.fuzz()
+        new_set_diff = max_exp - fuzz.expansion_coverage()
 
-            if len(original_set_diff - new_set_diff) > 0:
-                count = 0
-                reached.add(inp)
-            elif original_set_diff == new_set_diff:
-                count += 1
-                if count > 3:
-                    print("Unable to produce %d elements with the grammar (%.2f)" %
-                          (len(new_set_diff), len(new_set_diff) / len(max_exp)))
-                    break
+        if len(original_set_diff - new_set_diff) > 0:
+            count = 0
+            reached.add(inp)
+        elif original_set_diff == new_set_diff:
+            count += 1
+            if count > 3:
+                print("Unable to produce %d elements with the grammar (%.2f)" %
+                      (len(new_set_diff), len(new_set_diff) / len(max_exp)))
+                break
 
     return reached
 
@@ -379,16 +381,16 @@ if __name__ == "__main__":
     package = sys.argv[2]
 
     if len(sys.argv) >= 4:
-        inputs = int(sys.argv[3])
+        num_inputs = int(sys.argv[3])
     else:
-        inputs = 10
+        num_inputs = 10
 
     if len(sys.argv) >= 5:
         non_terminals = sys.argv[4] == '1' or sys.argv[4].lower() == 'true'
     else:
         non_terminals = False
 
-    generate_experiments_inputs(input_d, package, inputs, non_terminals)
+    generate_experiments_inputs(input_d, package, num_inputs, non_terminals)
 
 
 """

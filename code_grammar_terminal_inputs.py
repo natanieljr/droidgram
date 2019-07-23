@@ -3,13 +3,13 @@ import re
 import sys
 
 from fuzzingbook.Grammars import RE_NONTERMINAL, nonterminals
-from fuzzingbook.GrammarFuzzer import all_terminals
+# from fuzzingbook.GrammarFuzzer import all_terminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
 
 def iterative_all_terminals(tree):
-    #        if tree is None or len(tree) < 2:
-    #            return ''
+    if tree is None or len(tree) < 2:
+        return ''
     # old_value = all_terminals(tree)
 
     (symbol, children) = tree
@@ -360,7 +360,7 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
 
 
 def generate_inputs(grammar, use_non_terminals):
-    fuzz = TerminalCoverageGrammar(grammar, min_nonterminals=1, log=False)
+    fuzz = TerminalCoverageGrammar(grammar, min_nonterminals=1, log=True)
     fuzz.use_non_terminals_input(use_non_terminals)
     max_exp = fuzz.max_expansion_coverage(max_depth=len(grammar))
     reached = set()

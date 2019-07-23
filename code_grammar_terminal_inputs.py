@@ -3,26 +3,21 @@ import re
 import sys
 
 from fuzzingbook.Grammars import RE_NONTERMINAL, nonterminals
-# from fuzzingbook.GrammarFuzzer import all_terminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
 
 def iterative_all_terminals(tree):
     if tree is None or len(tree) < 2:
         return ''
-    # old_value = all_terminals(tree)
 
     (symbol, children) = tree
 
     terminals = []
-    #        if symbol in self._symbols_seen:
-    #            return symbol
 
     if children is None or len(children) == 0:
         # This is a nonterminal symbol not expanded yet
         # Or This is a terminal symbol
         terminals.append(symbol)
-        # return symbol
     else:
         # This is an expanded symbol:
         # Concatenate all terminal symbols from all children
@@ -38,9 +33,6 @@ def iterative_all_terminals(tree):
                 [q.append(c) for c in new_children]
 
     value = ''.join(terminals)
-
-    # if value != old_value:
-    #    print("here")
 
     return value
 
@@ -109,9 +101,10 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
             sum = 0
 
             # process
-            # seen_non_terminals = []
             for expansion in self.grammar[current]:
-                new_exp = filter(lambda x: x not in self.covered_expansions, self.expansion_key(current, expansion))
+                expansion_key = self.expansion_key(current, expansion)
+                covered_exp = self.covered_expansions
+                new_exp = filter(lambda x: x not in covered_exp, expansion_key)
                 for exp in new_exp:
                     expansions.add(exp)
                 for nonterminal in nonterminals(expansion):
@@ -123,7 +116,6 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
                     elif nonterminal not in self._symbols_seen:
                         sum += 1
                         queue.append(nonterminal)
-                        # seen_non_terminals.append(nonterminal)
                         self._symbols_seen.add(nonterminal)  # moved below
             # end process
 
@@ -139,11 +131,6 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
 
                 elements_to_depth_increase = next_elements_to_depth_increase
                 next_elements_to_depth_increase = 0
-
-            # It's safer to do it here, not in loop above, in order to avoid pruning
-            # tuples that have the same nonterminals but different terminals on same depth
-            # for nt in seen_non_terminals:
-            #    self._symbols_seen.add(nt)
 
         self._cache[key] = expansions
         return expansions
@@ -311,8 +298,6 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         if children is None:
             total += 1
 
-        # old_total = self._possible_expansions(node)
-
         if children is not None:
             q = [c for c in children]
             while q:
@@ -322,9 +307,6 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
                     total += 1
                 elif len(new_children) > 0:
                     [q.append(c) for c in new_children]
-
-        # if total != old_total:
-        #    print("here")
 
         return total
 
@@ -340,8 +322,6 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         if children is None:
             return True
 
-        # old_possible = self._any_possible_expansions(node)
-
         result = False
         if children is not None:
             q = [c for c in children]
@@ -352,9 +332,6 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
                     result = True
                 elif len(new_children) > 0:
                     [q.append(c) for c in new_children]
-
-        # if old_possible != result:
-        #    print("here")
 
         return result
 
@@ -451,53 +428,3 @@ if __name__ == "__main__":
         non_terminals = False
 
     generate_experiments_inputs(input_d, package, inputs, non_terminals)
-
-
-"""
-grammar = {
-    "<start>":
-        ["<expr>"],
-
-    "<expr>":
-        ["<term> + <expr>", "<term> - <expr>", "<term>"],
-
-    "<term>":
-        ["<factor> * <term>", "<factor> / <term>", "<factor>"],
-
-    "<factor>":
-        ["+<factor>",
-         "-<factor>",
-         "(<expr>)",
-         "<integer>.<integer>",
-         "<integer>"],
-
-    "<integer>":
-        ["<digit><integer>", "<digit>"],
-
-    "<digit>":
-        ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-}
-
-
-
-
-def load_grammar(input_dir, package_name):
-    filename = '%s/%s/grammar.txt' % (input_dir, package_name)
-    with open(filename) as f:
-        return json.load(f)
-
-
-grammar = load_grammar(".", "test")
-
-fuzzer = TerminalCoverageGrammar(grammar, min_nonterminals=1, log=True)
-reached = set()
-while len(fuzzer.max_expansion_coverage() - fuzzer.expansion_coverage()) > 0:
-    inp = fuzzer.fuzz()
-    reached.add(inp)
-    print(inp)
-
-
-print("\n\n\n\n\n")
-print(len(reached))
-[print(x) for x in reached]
-"""

@@ -3,19 +3,46 @@ import re
 import sys
 
 from fuzzingbook.Grammars import RE_NONTERMINAL, nonterminals
+from fuzzingbook.GrammarFuzzer import all_terminals
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 
 
-class recursion_limit:
-    def __init__(self, limit):
-        self.limit = limit
-        self.old_limit = sys.getrecursionlimit()
+def iterative_all_terminals(tree):
+    #        if tree is None or len(tree) < 2:
+    #            return ''
+    # old_value = all_terminals(tree)
 
-    def __enter__(self):
-        sys.setrecursionlimit(self.limit)
+    (symbol, children) = tree
 
-    def __exit__(self, type, value, tb):
-        sys.setrecursionlimit(self.old_limit)
+    terminals = []
+    #        if symbol in self._symbols_seen:
+    #            return symbol
+
+    if children is None or len(children) == 0:
+        # This is a nonterminal symbol not expanded yet
+        # Or This is a terminal symbol
+        terminals.append(symbol)
+        # return symbol
+    else:
+        # This is an expanded symbol:
+        # Concatenate all terminal symbols from all children
+        q = [c for c in children]
+
+        while q:
+            new_tree = q.pop(0)
+            (new_symbol, new_children) = new_tree
+
+            if new_children is None or len(new_children) == 0:
+                terminals.append(new_symbol)
+            else:
+                [q.append(c) for c in new_children]
+
+    value = ''.join(terminals)
+
+    # if value != old_value:
+    #    print("here")
+
+    return value
 
 
 class TerminalCoverageGrammar(GrammarCoverageFuzzer):
@@ -36,7 +63,7 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         if not isinstance(expansion, str):
             children = [((" " + x[0]).replace(" <", "<"), x[1]) for x in expansion]
             self._symbols_seen = set()
-            expansion = self.safe_all_terminals((symbol, children))
+            expansion = iterative_all_terminals((symbol, children))
 
         terminals = list(filter(
             lambda x: "<" not in x,
@@ -193,10 +220,6 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
     def get_empty(possible_children):
         return [idx for idx, child in enumerate(possible_children) if child[0][0] == "<empty>"][0]
 
-    def possible_expansions(self, node):
-        with recursion_limit(5000):
-            return super().possible_expansions(node)
-
     def choose_node_expansion(self, node, possible_children):
         (symbol, children) = node
         new_coverages = self.new_coverages(node, possible_children)
@@ -205,7 +228,7 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
             self._symbols_seen = set()
             # In a loop, look for empty
             if ((hasattr(self, 'derivation_tree') and
-                 len(self.safe_all_terminals(self.derivation_tree)) > len(self.grammar)) or
+                 len(iterative_all_terminals(self.derivation_tree)) > len(self.grammar)) or
                 (len(self.covered_expansions) >= len(self.grammar))) and "<empty>" in str(possible_children):
                 return self.get_empty(possible_children)
             else:
@@ -250,14 +273,14 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
             return all_non_terminals(self.derivation_tree).replace("<empty>", "")
         else:
             self._symbols_seen = set()
-            return self.safe_all_terminals(self.derivation_tree)
+            return iterative_all_terminals(self.derivation_tree)
 
     def expand_node_randomly(self, node):
         (symbol, children) = node
         assert children is None
 
         if self.log:
-            print("Expanding", self.safe_all_terminals(node), "randomly")
+            print("Expanding", iterative_all_terminals(node), "randomly")
 
         # Fetch the possible expansions from grammar...
         expansions = self.grammar[symbol]
@@ -275,28 +298,65 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         # Return with new children
         return symbol, chosen_children
 
-    def safe_all_terminals(self, tree):
-        if tree is None or len(tree) < 2:
-            return ''
-
-        (symbol, children) = tree
-
-        if symbol in self._symbols_seen:
-            return symbol
-
+    def _possible_expansions(self, node):
+        (symbol, children) = node
         if children is None:
-            # This is a nonterminal symbol not expanded yet
-            self._symbols_seen.add(symbol)
-            return symbol
+            return 1
 
-        if len(children) == 0:
-            # This is a terminal symbol
-            self._symbols_seen.add(symbol)
-            return symbol
+        return sum(self._possible_expansions(c) for c in children)
 
-        # This is an expanded symbol:
-        # Concatenate all terminal symbols from all children
-        return ''.join([self.safe_all_terminals(c) for c in children])
+    def possible_expansions(self, node):
+        total = 0
+        (symbol, children) = node
+        if children is None:
+            total += 1
+
+        # old_total = self._possible_expansions(node)
+
+        if children is not None:
+            q = [c for c in children]
+            while q:
+                new_node = q.pop(0)
+                (new_symbol, new_children) = new_node
+                if new_children is None:
+                    total += 1
+                elif len(new_children) > 0:
+                    [q.append(c) for c in new_children]
+
+        # if total != old_total:
+        #    print("here")
+
+        return total
+
+    def _any_possible_expansions(self, node):
+        (symbol, children) = node
+        if children is None:
+            return True
+
+        return any(self._any_possible_expansions(c) for c in children)
+
+    def any_possible_expansions(self, node):
+        (symbol, children) = node
+        if children is None:
+            return True
+
+        # old_possible = self._any_possible_expansions(node)
+
+        result = False
+        if children is not None:
+            q = [c for c in children]
+            while q and not result:
+                new_node = q.pop(0)
+                (new_symbol, new_children) = new_node
+                if new_children is None:
+                    result = True
+                elif len(new_children) > 0:
+                    [q.append(c) for c in new_children]
+
+        # if old_possible != result:
+        #    print("here")
+
+        return result
 
 
 def generate_inputs(grammar, use_non_terminals):
@@ -381,16 +441,16 @@ if __name__ == "__main__":
     package = sys.argv[2]
 
     if len(sys.argv) >= 4:
-        num_inputs = int(sys.argv[3])
+        inputs = int(sys.argv[3])
     else:
-        num_inputs = 10
+        inputs = 10
 
     if len(sys.argv) >= 5:
         non_terminals = sys.argv[4] == '1' or sys.argv[4].lower() == 'true'
     else:
         non_terminals = False
 
-    generate_experiments_inputs(input_d, package, num_inputs, non_terminals)
+    generate_experiments_inputs(input_d, package, inputs, non_terminals)
 
 
 """

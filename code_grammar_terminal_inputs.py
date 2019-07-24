@@ -181,7 +181,8 @@ class TerminalCoverageGrammar(GrammarCoverageFuzzer):
         """Return coverage to be obtained for each child at minimum depth"""
         (symbol, children) = node
         for max_depth in range(len(self.grammar)):
-            print("Looking for best element in depth %d of %d" % (max_depth, len(self.grammar)))
+            if self.log:
+                print("Looking for best element in depth %d of %d" % (max_depth, len(self.grammar)))
             new_coverages = [
                 self.new_child_coverage(symbol, c, max_depth)
                 for c in possible_children]

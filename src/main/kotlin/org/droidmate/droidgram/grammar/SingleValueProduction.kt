@@ -19,4 +19,8 @@ class SingleValueProduction(val symbol: Symbol) : Production(symbol) {
         return other is SingleValueProduction &&
                 other.values == this.values
     }
+
+    override fun hashCode(): Int {
+        return symbol.hashCode()
+    }
 }

@@ -176,10 +176,6 @@ class Grammar @JvmOverloads constructor(
         }
     }
 
-    fun addRule(name: Symbol, item: Symbol, coverage: Set<Long>) {
-        addRule(name.value, item, coverage)
-    }
-
     fun addRule(name: String, item: Symbol, coverage: Set<Long>) {
         addRule(name, item.value, coverage)
     }
@@ -234,26 +230,26 @@ class Grammar @JvmOverloads constructor(
         }
     }
 
-    private fun grammarMap(): Map<SingleValueProduction, Set<Production>> {
+    private fun grammarMap(useCoverage: Boolean): Map<String, Set<String>> {
         return grammar
             .entries
             .sortedBy { it.key }
             .map { entry ->
-                val key = entry.key
-                val value = entry.value.toSortedSet()
+                val key = entry.key.value
+                val value = entry.value.map { it.asString(useCoverage) }.toSortedSet()
 
                 Pair(key, value)
             }.toMap()
     }
 
-    fun asJsonStr(): String {
+    fun asJsonStr(useCoverage: Boolean): String {
         val gSon = GsonBuilder().setPrettyPrinting().create()
-        val entries = grammarMap()
+        val entries = grammarMap(useCoverage)
         return gSon.toJson(entries)
     }
 
-    fun asString(): String {
-        return grammarMap()
+    fun asString(useCoverage: Boolean): String {
+        return grammarMap(useCoverage)
             .map { entry ->
                 val key = entry.key
                 val value = entry.value

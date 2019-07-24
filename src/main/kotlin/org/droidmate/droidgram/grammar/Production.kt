@@ -16,6 +16,15 @@ open class Production(val values: List<Symbol>,
         values.filterNot { it.isTerminal() }
     }
 
+    fun asString(useCoverage: Boolean): String {
+        return if (useCoverage) {
+            coverage.joinToString(" ") { p -> p.toString() } +
+                    nonTerminals.joinToString("") { p -> p.value }
+        } else {
+            values.joinToString("") { p -> p.value }
+        }
+    }
+
     fun replace(condition: (Symbol) -> Boolean, newSymbol: Symbol): Production {
         val newValues = values.map { symbol ->
             if (condition(symbol)) {

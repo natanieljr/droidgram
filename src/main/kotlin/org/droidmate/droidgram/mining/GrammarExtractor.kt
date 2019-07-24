@@ -271,22 +271,19 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
 
         @JvmStatic
-        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path?) {
-            val fileNameSuffix = if (coverageDir == null) {
-                ""
-            } else {
+        private fun GrammarExtractor.write(useCoverage: Boolean, outputDir: Path) {
+            val fileNameSuffix = if (useCoverage) {
                 "WithCoverage"
+            } else {
+                ""
             }
 
-            val extractor = GrammarExtractor(inputDir, coverageDir)
-            extractor.extractGrammar()
-
-            val grammarJSON = extractor.grammar.asJsonStr()
+            val grammarJSON = this.grammar.asJsonStr(useCoverage)
             val grammarFile = outputDir.resolve("grammar$fileNameSuffix.txt")
             Files.write(grammarFile, grammarJSON.toByteArray())
 
             val mapping = StringBuilder()
-            extractor.mapping
+            this.mapping
                 .toSortedMap()
                 .forEach { (key, value) ->
                     mapping.appendln("$key;$value")
@@ -296,11 +293,20 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             Files.write(mappingFile, mapping.toString().toByteArray())
 
             println("Grammar:")
-            val grammarStr = extractor.grammar.asString()
+            val grammarStr = this.grammar.asString(useCoverage)
             print(grammarStr)
 
             println("\nMapping: $mappingFile")
             print(mapping.toString())
+        }
+
+        @JvmStatic
+        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path) {
+            val extractor = GrammarExtractor(inputDir, coverageDir)
+            extractor.extractGrammar()
+
+            extractor.write(false, outputDir)
+            extractor.write(true, outputDir)
         }
 
         @JvmStatic
@@ -316,15 +322,9 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
                 .toAbsolutePath()
 
-            val isUiGrammar = args.size == 2
-
-            if (isUiGrammar) {
-                extractGrammar(inputDir, outputDir, null)
-            } else {
-                val coverageDir = inputDir.parent.resolveSibling("coverage")
-                check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
-                extractGrammar(inputDir, outputDir, coverageDir)
-            }
+            val coverageDir = inputDir.parent.resolveSibling("coverage")
+            check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
+            extractGrammar(inputDir, outputDir, coverageDir)
         }
     }
 }

@@ -1,7 +1,5 @@
-package org.droidmate.droidgram
+package org.droidmate.droidgram.fuzzer
 
-import org.droidmate.droidgram.fuzzer.GrammarFuzzer
-import org.droidmate.droidgram.fuzzer.Node
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
 import kotlin.random.Random

@@ -1,5 +1,6 @@
 package org.droidmate.droidgram
 
+import org.droidmate.droidgram.fuzzer.RandomFuzzer
 import org.droidmate.droidgram.grammar.Grammar
 import org.junit.Test
 import kotlin.test.assertEquals

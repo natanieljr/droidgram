@@ -8,27 +8,36 @@ val grammarExpr = mapOf(
         Production("<expr>")
     ),
     SingleValueProduction("<expr>") to setOf(
-        Production("<term>", "+", "<expr>"),
-        Production("<term>", "-", "<expr>"),
+        Production(arrayOf("<term>", "+", "<expr>")),
+        Production(arrayOf("<term>", "-", "<expr>")),
         Production("<term>")
     ),
     SingleValueProduction("<term>") to setOf(
-        Production("<factor>", "*", "<term>"),
-        Production("<factor>", "/", "<term>"),
+        Production(arrayOf("<factor>", "*", "<term>")),
+        Production(arrayOf("<factor>", "/", "<term>")),
         Production("<factor>")
     ),
     SingleValueProduction("<factor>") to setOf(
-        Production("+", "<factor>"),
-        Production("-", "<factor>"),
-        Production("(", "<expr>", ")"),
-        Production("<integer>", ".", "<integer>", "<integer>")
+        Production(arrayOf("+", "<factor>")),
+        Production(arrayOf("-", "<factor>")),
+        Production(arrayOf("(", "<expr>", ")")),
+        Production(arrayOf("<integer>", ".", "<integer>", "<integer>"))
     ),
     SingleValueProduction("<integer>") to setOf(
-        Production("<digit>", "<integer>"),
+        Production(arrayOf("<digit>", "<integer>")),
         Production("<digit>")
     ),
     SingleValueProduction("<digit>") to setOf(
-        Production("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+        Production("0"),
+        Production("1"),
+        Production("2"),
+        Production("3"),
+        Production("4"),
+        Production("5"),
+        Production("6"),
+        Production("7"),
+        Production("8"),
+        Production("9")
     )
 )
 
@@ -38,7 +47,7 @@ val grammarCGI = mapOf(
     ),
     SingleValueProduction("<string>") to setOf(
         Production("<letter>"),
-        Production("<letter>", "<string>")
+        Production(arrayOf("<letter>", "<string>"))
     ),
     SingleValueProduction("<letter>") to setOf(
         Production("<plus>"),
@@ -49,7 +58,7 @@ val grammarCGI = mapOf(
         Production("+")
     ),
     SingleValueProduction("<percent>") to setOf(
-        Production("%", "<hexdigit>", "<hexdigit>")
+        Production(arrayOf("%", "<hexdigit>", "<hexdigit>"))
     ),
     SingleValueProduction("<hexdigit>") to setOf(
         Production("0"),
@@ -92,7 +101,7 @@ val grammarURL = mapOf(
         Production("<url>")
     ),
     SingleValueProduction("<url>") to setOf(
-        Production("<scheme>", "://", "<authority>", "<path>", "<query>")
+        Production(arrayOf("<scheme>", "://", "<authority>", "<path>", "<query>"))
     ),
     SingleValueProduction("<scheme>") to setOf(
         Production("http"),
@@ -102,9 +111,9 @@ val grammarURL = mapOf(
     ),
     SingleValueProduction("<authority>") to setOf(
         Production("<host>"),
-        Production("<host>", ":", "<port>"),
-        Production("<userinfo>", "@", "<host>"),
-        Production("<userinfo>", "@", "<host>", ":", "<port>")
+        Production(arrayOf("<host>", ":", "<port>")),
+        Production(arrayOf("<userinfo>", "@", "<host>")),
+        Production(arrayOf("<userinfo>", "@", "<host>", ":", "<port>"))
     ),
     // Just a few
     SingleValueProduction("<host>") to setOf(
@@ -119,7 +128,7 @@ val grammarURL = mapOf(
     ),
     SingleValueProduction("<nat>") to setOf(
         Production("<digit>"),
-        Production("<digit>", "<digit>")
+        Production(arrayOf("<digit>", "<digit>"))
     ),
     SingleValueProduction("<digit>") to setOf(
         Production("0"),
@@ -147,20 +156,20 @@ val grammarURL = mapOf(
     SingleValueProduction("<id>") to setOf(
         Production("abc"),
         Production("def"),
-        Production("x", "<digit>", "<digit>")
+        Production(arrayOf("x", "<digit>", "<digit>"))
     ),
     SingleValueProduction("<query>") to setOf(
         Production(""),
-        Production("?", "<params>")
+        Production(arrayOf("?", "<params>"))
     ),
     SingleValueProduction("<params>") to setOf(
         Production("<param>"),
-        Production("<param>", "&", "<params>")
+        Production(arrayOf("<param>", "&", "<params>"))
     ),
     // Just a few
     SingleValueProduction("<param>") to setOf(
-        Production("<id>", "=", "<id>"),
-        Production("<id>", "=", "<nat>")
+        Production(arrayOf("<id>", "=", "<id>")),
+        Production(arrayOf("<id>", "=", "<nat>"))
     )
 )
 
@@ -169,11 +178,11 @@ val grammarTitle = mapOf(
         Production("<title>")
     ),
     SingleValueProduction("<title>") to setOf(
-        Production("<topic>", ":", "<subtopic>")
+        Production(arrayOf("<topic>", ":", "<subtopic>"))
     ),
     SingleValueProduction("<topic>") to setOf(
         Production("Generating Software Tests"),
-        Production("<fuzzing-prefix>", "Fuzzing"),
+        Production(arrayOf("<fuzzing-prefix>", "Fuzzing")),
         Production("The Fuzzing Book")
     ),
     SingleValueProduction("<fuzzing-prefix>") to setOf(
@@ -183,8 +192,8 @@ val grammarTitle = mapOf(
     ),
     SingleValueProduction("<subtopic>") to setOf(
         Production("<subtopic-main>"),
-        Production("<subtopic-prefix>", "<subtopic-main>"),
-        Production("<subtopic-main>", "<subtopic-suffix>")
+        Production(arrayOf("<subtopic-prefix>", "<subtopic-main>")),
+        Production(arrayOf("<subtopic-main>", "<subtopic-suffix>"))
     ),
     SingleValueProduction("<subtopic-main>") to setOf(
         Production("Breaking Software"),
@@ -196,8 +205,8 @@ val grammarTitle = mapOf(
         Production("Tools and Techniques for ")
     ),
     SingleValueProduction("<subtopic-suffix>") to setOf(
-        Production(" for", "<reader-property>", "and", "<reader-property>"),
-        Production(" for", "<software-property>", "and", "<software-property>")
+        Production(arrayOf(" for", "<reader-property>", "and", "<reader-property>")),
+        Production(arrayOf(" for", "<software-property>", "and", "<software-property>"))
     ),
     SingleValueProduction("<reader-property>") to setOf(
         Production("Fun"),

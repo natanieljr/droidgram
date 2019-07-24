@@ -1,7 +1,9 @@
 package org.droidmate.droidgram.grammar
 
-open class Production(val values: List<Symbol>,
-                      val coverage: Set<Long> = emptySet()) : Comparable<Production> {
+open class Production(
+    val values: List<Symbol>,
+    val coverage: Set<Long> = emptySet()
+) : Comparable<Production> {
     constructor(value: Symbol, coverage: Set<Long> = emptySet()) : this(listOf(value), coverage)
 
     constructor(value: String, coverage: Set<Long> = emptySet()) : this(listOf(Symbol(value)), coverage)

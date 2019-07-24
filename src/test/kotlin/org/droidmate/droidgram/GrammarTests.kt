@@ -53,7 +53,7 @@ class GrammarTests {
         ).isValid())
 
         assert(!Grammar(initialGrammar = mapOf(
-            SingleValueProduction("<start>") to setOf(Production("1", "2", "3")))
+            SingleValueProduction("<start>") to setOf(Production(arrayOf("1", "2", "3"))))
         ).isValid())
     }
 }

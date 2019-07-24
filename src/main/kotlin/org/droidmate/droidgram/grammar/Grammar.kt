@@ -206,7 +206,7 @@ class Grammar @JvmOverloads constructor(
             grammar[key] = emptySet
         }
 
-        val existingKey = grammar.keys.first{ it == key }
+        val existingKey = grammar.keys.first { it == key }
 
         val values = grammar[existingKey].orEmpty()
 

@@ -156,7 +156,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
                     actionCoverage(actionId + 3)
                 }
 
-                val productionRule = "$terminal $resultStateNonTerminal"
+                val productionRule = arrayOf(terminal, resultStateNonTerminal)
                 mGrammar.addRule("<start>", productionRule)
             }
             ActionType.PressBack.name -> {
@@ -166,7 +166,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
                     actionCoverage(actionId)
                 }
                 val nonTerminal = "<$action($sourceStateUID)>"
-                val productionRule = "$terminal $nonTerminal"
+                val productionRule = arrayOf(terminal, nonTerminal)
 
                 mGrammar.addRule(sourceStateNonTerminal, productionRule)
                 mGrammar.addRule(nonTerminal, resultStateNonTerminal)
@@ -184,7 +184,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
                     actionCoverage(actionId)
                 }
                 val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
-                val productionRule = "$terminal $nonTerminal"
+                val productionRule = arrayOf(terminal, nonTerminal)
 
                 mGrammar.addRule(sourceStateNonTerminal, productionRule)
                 mGrammar.addRule(nonTerminal, resultStateNonTerminal)

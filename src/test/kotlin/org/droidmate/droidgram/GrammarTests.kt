@@ -1,6 +1,8 @@
 package org.droidmate.droidgram
 
 import org.droidmate.droidgram.grammar.Grammar
+import org.droidmate.droidgram.grammar.Production
+import org.droidmate.droidgram.grammar.SingleValueProduction
 import org.droidmate.droidgram.grammar.isNonTerminal
 import org.droidmate.droidgram.grammar.nonTerminals
 import org.junit.Test
@@ -37,12 +39,21 @@ class GrammarTests {
     fun invalidGrammarTest() {
         assert(!Grammar(
             initialGrammar = mapOf(
-                "<start>" to setOf("<x>"),
-                "<y>" to setOf("1")
+                SingleValueProduction("<start>") to setOf(Production("<x>")),
+                SingleValueProduction("<y>") to setOf(Production("1"))
             )
         ).isValid())
-        assert(!Grammar(initialGrammar = mapOf("<start>" to setOf("123"))).isValid())
-        assert(!Grammar(initialGrammar = mapOf("<start>" to emptySet())).isValid())
-        assert(!Grammar(initialGrammar = mapOf("<start>" to setOf("1", "2", "3"))).isValid())
+
+        assert(!Grammar(initialGrammar = mapOf(
+            SingleValueProduction("<start>") to setOf(Production("123")))
+        ).isValid())
+
+        assert(!Grammar(initialGrammar = mapOf(
+            SingleValueProduction("<start>") to emptySet())
+        ).isValid())
+
+        assert(!Grammar(initialGrammar = mapOf(
+            SingleValueProduction("<start>") to setOf(Production("1", "2", "3")))
+        ).isValid())
     }
 }

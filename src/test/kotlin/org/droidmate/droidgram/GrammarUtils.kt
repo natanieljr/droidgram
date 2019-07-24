@@ -1,7 +1,4 @@
-package org.droidmate.droidgram.grammar
-
-const val notReachedTerminals = "notReachedTerminals.txt"
-const val reachedTerminals = "reachedTerminals.txt"
+package org.droidmate.droidgram
 
 val defaultNonTerminalRegex = "(<[^<> ]*>)".toPattern().toRegex()
 

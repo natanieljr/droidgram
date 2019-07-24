@@ -3,8 +3,6 @@ package org.droidmate.droidgram
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
 import org.droidmate.droidgram.grammar.SingleValueProduction
-import org.droidmate.droidgram.grammar.isNonTerminal
-import org.droidmate.droidgram.grammar.nonTerminals
 import org.junit.Test
 import kotlin.test.assertEquals
 

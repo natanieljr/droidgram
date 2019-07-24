@@ -8,14 +8,19 @@ object DefaultExploration {
     @JvmStatic
     fun main(args: Array<String>) {
         runBlocking {
-            val cfg = ExplorationAPI.config(args)
-
-            val modelProvider = CustomModelProvider()
-            ExplorationAPI.explore(
-                cfg,
-                watcher = emptyList(),
-                modelProvider = modelProvider
-            )
+            explore(args)
         }
+    }
+
+    @JvmStatic
+    suspend fun explore(args: Array<String>) {
+        val cfg = ExplorationAPI.config(args)
+
+        val modelProvider = CustomModelProvider()
+        ExplorationAPI.explore(
+            cfg,
+            watcher = emptyList(),
+            modelProvider = modelProvider
+        )
     }
 }

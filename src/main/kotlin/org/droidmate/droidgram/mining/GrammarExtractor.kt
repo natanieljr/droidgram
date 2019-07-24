@@ -310,7 +310,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         @JvmStatic
-        fun main(args: Array<String>) {
+        fun extract(args: Array<String>) {
             check(args.isNotEmpty()) { "Missing model dir argument" }
             val inputDir = (
                     Files.list(Paths.get(args.first()))
@@ -325,6 +325,11 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             val coverageDir = inputDir.parent.resolveSibling("coverage")
             check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
             extractGrammar(inputDir, outputDir, coverageDir)
+        }
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            extract(args)
         }
     }
 }

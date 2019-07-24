@@ -40,15 +40,23 @@ object ExperimentMain {
     @JvmStatic
     fun main(args: Array<String>) {
         runBlocking {
-            if (args.contains("result")) {
-                ResultBuilder.main(args.filterNot { it.contains("result") }.toTypedArray())
-                exitProcess(0)
-            } else if (args.contains("extract")) {
-                GrammarExtractor.main(args.filterNot { it.contains("extract") }.toTypedArray())
-                exitProcess(0)
-            } else if (args.contains("run")) {
-                DefaultExploration.main(args.filterNot { it.contains("run") }.toTypedArray())
-                exitProcess(0)
+            // Grammar coverage relative to current input
+            // Code coverage relative to the overall grammar
+            // Grammar coverage relative to the overall grammar
+            // Code coverage relative to the overall grammar
+            when {
+                args.contains("result") -> {
+                    ResultBuilder.main(args.filterNot { it.contains("result") }.toTypedArray())
+                    exitProcess(0)
+                }
+                args.contains("extract") -> {
+                    GrammarExtractor.extract(args.filterNot { it.contains("extract") }.toTypedArray())
+                    exitProcess(0)
+                }
+                args.contains("explore") -> {
+                    DefaultExploration.explore(args.filterNot { it.contains("explore") }.toTypedArray())
+                    exitProcess(0)
+                }
             }
 
             val mainCfg = ExplorationAPI.config(args, *extraCmdOptions())

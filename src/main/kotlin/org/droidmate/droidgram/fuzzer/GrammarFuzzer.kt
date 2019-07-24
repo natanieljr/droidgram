@@ -4,9 +4,8 @@ import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
 import org.droidmate.droidgram.grammar.Symbol
 import java.util.LinkedList
-import kotlin.random.Random
 
-open class GrammarFuzzer(private val grammar: Grammar) {
+abstract class GrammarFuzzer(private val grammar: Grammar) {
     init {
         check(grammar.isValid()) { "The grammar is not valid." }
     }
@@ -19,7 +18,7 @@ open class GrammarFuzzer(private val grammar: Grammar) {
         Node(root)
     }
 
-    fun allTerminals(): List<Symbol> {
+    private fun allTerminals(): List<Symbol> {
         val stack = LinkedList<Node>()
         val terminals = mutableListOf<Symbol>()
 
@@ -68,19 +67,14 @@ open class GrammarFuzzer(private val grammar: Grammar) {
         return nonExpanded
     }
 
-    protected open fun Collection<Production>.chooseChild(): Production {
-        return this.random(Random(0))
-    }
-
-    private fun Node.expand(): List<Node> {
-        val chosenChild = grammar[this.value]
-            .orEmpty()
-            .chooseChild()
+    protected open fun expandNode(node: Node): List<Node> {
+        val children = grammar[node.value].orEmpty()
+        val chosenChild = chooseChild(children)
 
         val result = mutableListOf<Node>()
 
         for (symbol in chosenChild.values) {
-            val node = this.addChild(symbol)
+            val node = node.addChild(symbol)
             nodeList.add(node)
 
             result.add(node)
@@ -89,20 +83,32 @@ open class GrammarFuzzer(private val grammar: Grammar) {
         return result
     }
 
-    protected open fun List<Node>.chooseExpansion(): Node {
-        return this.random(Random(0))
+    protected open fun expandOnce(nonExpandedNodes: List<Node>) {
+        val node = chooseNodeExpansion(nonExpandedNodes)
+
+        val newNodes = expandNode(node)
+        println("Expanding $node into $newNodes")
+
+        onExpanded(node, newNodes)
     }
 
-    fun fuzz() {
+    open fun fuzz(): List<Symbol> {
         var nonExpandedNodes = nonExpandedNodes()
 
         while (nonExpandedNodes.isNotEmpty()) {
-            val node = nonExpandedNodes.chooseExpansion()
-
-            val newNodes = node.expand()
-            println("Expanding $node into $newNodes")
+            expandOnce(nonExpandedNodes)
 
             nonExpandedNodes = nonExpandedNodes()
         }
+
+        return getInput()
     }
+
+    protected open fun getInput(): List<Symbol> {
+        return allTerminals()
+    }
+
+    protected abstract fun chooseChild(children: Collection<Production>): Production
+    protected abstract fun chooseNodeExpansion(nodes: List<Node>): Node
+    protected abstract fun onExpanded(node: Node, newNodes: List<Node>)
 }

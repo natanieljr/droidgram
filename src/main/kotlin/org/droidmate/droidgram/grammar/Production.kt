@@ -2,13 +2,13 @@ package org.droidmate.droidgram.grammar
 
 open class Production(
     val values: List<Symbol>,
-    val coverage: Set<Long> = emptySet()
+    val coverage: Set<Symbol> = emptySet()
 ) : Comparable<Production> {
-    constructor(value: Symbol, coverage: Set<Long> = emptySet()) : this(listOf(value), coverage)
+    constructor(value: Symbol, coverage: Set<Symbol> = emptySet()) : this(listOf(value), coverage)
 
-    constructor(value: String, coverage: Set<Long> = emptySet()) : this(listOf(Symbol(value)), coverage)
+    constructor(value: String, coverage: Set<Symbol> = emptySet()) : this(listOf(Symbol(value)), coverage)
 
-    constructor(values: Array<String>, coverage: Set<Long> = emptySet()) : this(values.map { Symbol(it) }, coverage)
+    constructor(values: Array<String>, coverage: Set<Symbol> = emptySet()) : this(values.map { Symbol(it) }, coverage)
 
     val terminals by lazy {
         values.filter { it.isTerminal() }
@@ -20,7 +20,7 @@ open class Production(
 
     fun asString(useCoverage: Boolean): String {
         return if (useCoverage) {
-            coverage.joinToString(" ") { p -> p.toString() } +
+            coverage.joinToString(" ") { p -> p.value } +
                     nonTerminals.joinToString("") { p -> p.value }
         } else {
             values.joinToString("") { p -> p.value }

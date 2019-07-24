@@ -6,7 +6,7 @@ import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
 import kotlin.random.Random
 
-class RandomFuzzer(grammar: Grammar, private val random: Random = Random(0)): GrammarFuzzer(grammar) {
+class RandomFuzzer(grammar: Grammar, private val random: Random = Random(0)) : GrammarFuzzer(grammar) {
     override fun chooseChild(children: Collection<Production>): Production {
         return children.random(random)
     }

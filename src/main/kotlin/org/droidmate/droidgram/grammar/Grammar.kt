@@ -24,7 +24,6 @@ class Grammar @JvmOverloads constructor(
         return grammar.get(key)
     }
 
-
     private val grammar: MutableMap<SingleValueProduction, MutableSet<Production>> by lazy {
         initialGrammar
             .map { Pair(it.key, it.value.toMutableSet()) }
@@ -195,10 +194,14 @@ class Grammar @JvmOverloads constructor(
 
     fun addRule(name: String, item: Array<String>, coverage: Set<Long>) {
         val key = SingleValueProduction(name)
+        val coverageSymbol = coverage
+            .map { Symbol(it.toString()) }
+            .toSet()
+
         val value = Production(item
             .filter { it.isNotEmpty() }
             .toTypedArray(),
-            coverage
+            coverageSymbol
         )
 
         val emptySet: MutableSet<Production> = if (key.isAction()) {

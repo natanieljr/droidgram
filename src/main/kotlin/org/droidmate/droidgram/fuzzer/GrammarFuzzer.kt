@@ -74,10 +74,10 @@ abstract class GrammarFuzzer(private val grammar: Grammar) {
         val result = mutableListOf<Node>()
 
         for (symbol in chosenChild.values) {
-            val node = node.addChild(symbol)
-            nodeList.add(node)
+            val newNode = node.addChild(symbol)
 
-            result.add(node)
+            nodeList.add(newNode)
+            result.add(newNode)
         }
 
         return result

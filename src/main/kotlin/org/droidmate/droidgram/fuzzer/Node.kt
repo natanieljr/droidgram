@@ -10,7 +10,7 @@ class Node(
     var children: MutableList<Node> = mutableListOf()
 
     fun hasChildren() = children.isNotEmpty()
-    
+
     fun addChild(item: Symbol): Node {
         val node = Node(item, this, depth + 1)
         children.add(node)

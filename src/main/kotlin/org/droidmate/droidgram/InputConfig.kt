@@ -56,7 +56,9 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
                 candidateName.endsWith(".txt") &&
                 (candidateName == "$inputFileName$seedNrStr.txt" || seedNr == -1)
 
-        log.warn("Is input file: $isInputFile: $this")
+        if (isInputFile) {
+            log.warn("Is input file: $isInputFile: $this")
+        }
 
         return isInputFile
     }
@@ -124,6 +126,8 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
     }
 
     private val coverageFiles: List<Path> by lazy {
+        log.warn("Searching coverage files in $inputDir")
+
         val files = Files.walk(inputDir)
                 .filter { it.fileName.toString().contains("-statements-") }
                 .filter { it.fileName.toString().takeLastWhile { p -> p != '-' }.toLongOrNull() != null }

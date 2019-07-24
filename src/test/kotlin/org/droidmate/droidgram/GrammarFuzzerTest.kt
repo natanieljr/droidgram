@@ -1,20 +1,18 @@
-/*package org.droidmate.droidgram
+package org.droidmate.droidgram
 
+import org.droidmate.droidgram.fuzzer.GrammarFuzzer
+import org.droidmate.droidgram.grammar.Grammar
 import org.junit.Test
 
 class GrammarFuzzerTest {
     private val generator
-        get() = GrammarFuzzer(Grammar.from(grammarExpr))
-
-    @Test
-    fun initTreeTest() {
-        generator.initTree()
-        assert(true)
-    }
+        get() = GrammarFuzzer(Grammar(initialGrammar = grammarTitle))
 
     @Test
     fun getChildren() {
-        print(generator.testGetChildren("<term> + <expr>"))
+        val fuzz = generator
+        fuzz.fuzz()
+        print(fuzz.allTerminals())
         assert(true)
     }
-}*/
+}

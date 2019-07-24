@@ -20,6 +20,11 @@ class Grammar @JvmOverloads constructor(
         return grammar[key]
     }
 
+    operator fun get(key: Symbol): Set<Production>? {
+        return grammar.get(key)
+    }
+
+
     private val grammar: MutableMap<SingleValueProduction, MutableSet<Production>> by lazy {
         initialGrammar
             .map { Pair(it.key, it.value.toMutableSet()) }
@@ -341,5 +346,9 @@ class Grammar @JvmOverloads constructor(
         }
 
         return true
+    }
+
+    fun getRoot(): Symbol {
+        return Symbol.start
     }
 }

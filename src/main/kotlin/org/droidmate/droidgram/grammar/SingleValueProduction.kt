@@ -16,8 +16,11 @@ class SingleValueProduction(val symbol: Symbol) : Production(symbol) {
         get() = symbol.value
 
     override fun equals(other: Any?): Boolean {
-        return other is SingleValueProduction &&
-                other.values == this.values
+        return when (other) {
+            is SingleValueProduction -> values == other.values
+            is Production -> values == other.values
+            else -> false
+        }
     }
 
     override fun hashCode(): Int {

@@ -1,13 +1,12 @@
 package org.droidmate.droidgram.grammar
 
-open class Production(val values: List<Symbol>) : Comparable<Production> {
-    constructor(value: Symbol) : this(listOf(value))
+open class Production(val values: List<Symbol>,
+                      val coverage: Set<Long> = emptySet()) : Comparable<Production> {
+    constructor(value: Symbol, coverage: Set<Long> = emptySet()) : this(listOf(value), coverage)
 
-    constructor(value: String) : this(listOf(Symbol(value)))
+    constructor(value: String, coverage: Set<Long> = emptySet()) : this(listOf(Symbol(value)), coverage)
 
-    constructor(values: Array<String>) : this(values.map { Symbol(it) })
-
-    // val values: MutableList<Symbol> = originalValues.toMutableList()
+    constructor(values: Array<String>, coverage: Set<Long> = emptySet()) : this(values.map { Symbol(it) }, coverage)
 
     val terminals by lazy {
         values.filter { it.isTerminal() }
@@ -26,7 +25,7 @@ open class Production(val values: List<Symbol>) : Comparable<Production> {
             }
         }
 
-        return Production(newValues)
+        return Production(newValues, coverage)
     }
 
     fun replace(oldSymbol: Symbol, newSymbol: Symbol): Production {
@@ -36,12 +35,6 @@ open class Production(val values: List<Symbol>) : Comparable<Production> {
     fun replaceByEpsilon(oldSymbol: Symbol): Production {
         return replace(oldSymbol, Symbol.epsilon)
     }
-
-    /*
-    fun replaceByEpsilon(condition: (Symbol) -> Boolean): Production {
-        return replace(condition, Symbol.epsilon)
-    }
-    */
 
     fun isStart(): Boolean {
         return values.any { it == Symbol.start }
@@ -60,8 +53,10 @@ open class Production(val values: List<Symbol>) : Comparable<Production> {
     }
 
     override fun equals(other: Any?): Boolean {
-        return other is Production &&
-                other.values == this.values
+        return when (other) {
+            is Production -> values == other.values
+            else -> false
+        }
     }
 
     override fun toString(): String {
@@ -70,5 +65,11 @@ open class Production(val values: List<Symbol>) : Comparable<Production> {
 
     override fun compareTo(other: Production): Int {
         return values.toString().compareTo(other.values.toString())
+    }
+
+    override fun hashCode(): Int {
+        var result = values.hashCode()
+        result = 31 * result + coverage.hashCode()
+        return result
     }
 }

@@ -6,6 +6,7 @@ import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.deviceInterface.exploration.isPressBack
 import org.droidmate.droidgram.grammar.Grammar
+import org.droidmate.droidgram.grammar.Symbol
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.FileNotFoundException
@@ -39,11 +40,9 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
     }
 
-    private fun actionCoverage(actionId: Int): String {
-        val linesOfCode = coveragePerAction
+    private fun actionCoverage(actionId: Int): Set<Long> {
+        return coveragePerAction
             .getOrDefault(actionId, emptySet())
-
-        return linesOfCode.joinToString(" ")
     }
 
     private fun String.getUUID(): String {
@@ -139,7 +138,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         val resultStateNonTerminal = if (resultState.isEmpty() || resultStateConcreteId.isHomeScreen()) {
-            ""
+            Symbol.epsilon.value
         } else {
             "<$resultState>"
         }
@@ -148,46 +147,34 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
 
         when (action) {
             LaunchApp.name -> {
-                val terminal = if (this.mCoverageDir == null) {
-                    ""
-                } else {
-                    // Launch app is a queue as follows: start queue, launch, enable wifi, close keyboard, end queue
-                    // Start needs +3 because it uses the action Queue ID which is +1[wifi] +1[keyboard +1[end queue].
-                    actionCoverage(actionId + 3)
-                }
-
-                val productionRule = arrayOf(terminal, resultStateNonTerminal)
-                mGrammar.addRule("<start>", productionRule)
+                // Launch app is a queue as follows: start queue, launch, enable wifi, close keyboard, end queue
+                // Start needs +3 because it uses the action Queue ID which is +1[wifi] +1[keyboard +1[end queue].
+                val coverage = actionCoverage(actionId + 3)
+                mGrammar.addRule(Symbol.start, resultStateNonTerminal, coverage)
             }
             ActionType.PressBack.name -> {
-                val terminal = if (this.mCoverageDir == null) {
-                    "$action($sourceStateUID)"
-                } else {
-                    actionCoverage(actionId)
-                }
+                val terminal = "$action($sourceStateUID)"
                 val nonTerminal = "<$action($sourceStateUID)>"
                 val productionRule = arrayOf(terminal, nonTerminal)
+                val coverage = actionCoverage(actionId)
 
-                mGrammar.addRule(sourceStateNonTerminal, productionRule)
-                mGrammar.addRule(nonTerminal, resultStateNonTerminal)
+                mGrammar.addRule(sourceStateNonTerminal, productionRule, coverage)
+                mGrammar.addRule(nonTerminal, resultStateNonTerminal, emptySet())
             }
             ActionType.Terminate.name -> {
                 val productionRule = "<$action($sourceStateUID)>"
 
-                mGrammar.addRule(sourceStateNonTerminal, productionRule)
-                mGrammar.addRule(productionRule, "<empty>")
+                mGrammar.addRule(sourceStateNonTerminal, productionRule, emptySet())
+                mGrammar.addRule(productionRule, Symbol.empty, emptySet())
             }
             else -> {
-                val terminal = if (this.mCoverageDir == null) {
-                    "$action($widgetUID$textualData)"
-                } else {
-                    actionCoverage(actionId)
-                }
+                val terminal = "$action($widgetUID$textualData)"
                 val nonTerminal = "<$action($sourceStateUID.$widgetUID$textualData)>"
                 val productionRule = arrayOf(terminal, nonTerminal)
+                val coverage = actionCoverage(actionId)
 
-                mGrammar.addRule(sourceStateNonTerminal, productionRule)
-                mGrammar.addRule(nonTerminal, resultStateNonTerminal)
+                mGrammar.addRule(sourceStateNonTerminal, productionRule, coverage)
+                mGrammar.addRule(nonTerminal, resultStateNonTerminal, emptySet())
             }
         }
     }
@@ -248,7 +235,9 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
 
         postProcessGrammar()
 
-        check(mGrammar.isValid()) { "Grammar is invalid" }
+        check(mGrammar.isValid()) {
+            "Grammar is invalid"
+        }
     }
 
     /**

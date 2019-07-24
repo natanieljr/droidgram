@@ -176,15 +176,28 @@ class Grammar @JvmOverloads constructor(
         }
     }
 
-    fun addRule(name: String, item: String) {
-        addRule(name, arrayOf(item))
+    fun addRule(name: Symbol, item: Symbol, coverage: Set<Long>) {
+        addRule(name.value, item, coverage)
     }
 
-    fun addRule(name: String, item: Array<String>) {
+    fun addRule(name: String, item: Symbol, coverage: Set<Long>) {
+        addRule(name, item.value, coverage)
+    }
+
+    fun addRule(name: Symbol, item: String, coverage: Set<Long>) {
+        addRule(name.value, item, coverage)
+    }
+
+    fun addRule(name: String, item: String, coverage: Set<Long>) {
+        addRule(name, arrayOf(item), coverage)
+    }
+
+    fun addRule(name: String, item: Array<String>, coverage: Set<Long>) {
         val key = SingleValueProduction(name)
         val value = Production(item
             .filter { it.isNotEmpty() }
-            .toTypedArray()
+            .toTypedArray(),
+            coverage
         )
 
         val emptySet: MutableSet<Production> = if (key.isAction()) {
@@ -198,7 +211,27 @@ class Grammar @JvmOverloads constructor(
         }
 
         val existingKey = grammar.keys.first{ it == key }
-        grammar[existingKey]?.add(value)
+
+        val values = grammar[existingKey].orEmpty()
+
+        // There's a bug in Kotlin
+        // If we do value in values, it returns false due to different overrides of equals method
+        // If we do value in values.map { it }, it returns true (correctly)
+        if (value in values.map { it }) {
+            // If the value was already there, need to merge the coverages
+            val oldValue = values.first { it == value }
+            val mergedCoverage = oldValue.coverage + value.coverage
+            val newValue = Production(value.values, mergedCoverage)
+
+            val newValues = values
+                .filterNot { it == value }
+                .toMutableSet()
+                .also { it.add(newValue) }
+
+            grammar.replace(existingKey, values.toMutableSet(), newValues)
+        } else {
+            grammar[existingKey]?.add(value)
+        }
     }
 
     private fun grammarMap(): Map<SingleValueProduction, Set<Production>> {

@@ -16,14 +16,6 @@ data class Symbol(val value: String) : Comparable<Symbol> {
         val start = Symbol(startValue)
     }
 
-    fun isEmpty(): Boolean {
-        return value.isEmpty()
-    }
-
-    fun isStart(): Boolean {
-        return value == startValue
-    }
-
     fun isNonTerminal(): Boolean {
         return value.startsWith("<")
     }
@@ -38,5 +30,16 @@ data class Symbol(val value: String) : Comparable<Symbol> {
 
     override fun toString(): String {
         return value
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when (other) {
+            is Symbol -> value == other.value
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
     }
 }

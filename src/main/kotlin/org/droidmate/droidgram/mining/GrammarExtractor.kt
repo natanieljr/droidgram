@@ -350,6 +350,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             )
             val result = mutableListOf<List<Symbol>>()
 
+            var count = 0
             while (generator.nonCoveredSymbols.isNotEmpty()) {
 
                 val nonCoveredSymbolsBeforeRun = generator.nonCoveredSymbols
@@ -359,12 +360,25 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
                 println("Covered: $newlyCovered")
                 println("Missing: ${generator.nonCoveredSymbols}")
 
-                check(generator.nonCoveredSymbols.isEmpty() || newlyCovered.isNotEmpty()) {
-                    "No new terminals were covered in this run. " +
-                            "Original: $nonCoveredSymbolsBeforeRun. Actual: ${generator.nonCoveredSymbols}"
+                if (generator.nonCoveredSymbols.isNotEmpty() && newlyCovered.isEmpty()) {
+                    log.error("No new terminals were covered in this run. " +
+                            "Original: $nonCoveredSymbolsBeforeRun. Actual: ${generator.nonCoveredSymbols}")
+
+                    count++
+
+                    if (count >= 2) {
+                        break
+                    }
+                } else {
+                    count = 0
                 }
 
                 result.add(input)
+            }
+
+            if (generator.nonCoveredSymbols.isNotEmpty()) {
+                log.error("Could not cover ${generator.nonCoveredSymbols.size} symbol (${
+                generator.nonCoveredSymbols.size / grammar.definedTerminals().size.toLong()}%)")
             }
 
             return result

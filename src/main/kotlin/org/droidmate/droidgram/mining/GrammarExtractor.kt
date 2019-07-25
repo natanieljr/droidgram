@@ -303,7 +303,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         @JvmStatic
-        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path): Grammar {
+        fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path): Grammar {
             val extractor = GrammarExtractor(inputDir, coverageDir)
             val grammar = extractor.extractGrammar()
 

@@ -289,7 +289,7 @@ class Grammar @JvmOverloads constructor(
             .filterNot { it in reachableNonTerminals(Symbol.start) }
             .toSet()
 
-    private fun definedNonTerminals(): Set<Symbol> =
+    fun definedNonTerminals(): Set<Symbol> =
         grammar.keys.map { it.symbol }.toSet()
 
     private fun usedNonTerminals(): Set<Symbol> {

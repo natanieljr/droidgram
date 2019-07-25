@@ -5,7 +5,7 @@ import org.droidmate.droidgram.grammar.Production
 import org.droidmate.droidgram.grammar.Symbol
 import java.util.LinkedList
 
-abstract class GrammarFuzzer(private val grammar: Grammar) {
+abstract class GrammarFuzzer(protected val grammar: Grammar) {
     init {
         check(grammar.isValid()) { "The grammar is not valid." }
     }
@@ -67,13 +67,10 @@ abstract class GrammarFuzzer(private val grammar: Grammar) {
         return nonExpanded
     }
 
-    protected open fun expandNode(node: Node): List<Node> {
-        val children = grammar[node.value].orEmpty()
-        val chosenChild = chooseChild(children)
-
+    protected open fun expandNode(node: Node, child: Production): List<Node> {
         val result = mutableListOf<Node>()
 
-        for (symbol in chosenChild.values) {
+        for (symbol in child.values) {
             val newNode = node.addChild(symbol)
 
             nodeList.add(newNode)
@@ -84,9 +81,12 @@ abstract class GrammarFuzzer(private val grammar: Grammar) {
     }
 
     protected open fun expandOnce(nonExpandedNodes: List<Node>) {
-        val node = chooseNodeExpansion(nonExpandedNodes)
+        val nodeAndChild = chooseNodeExpansion(nonExpandedNodes)
+        val node = nodeAndChild.first
+        val child = nodeAndChild.second
 
-        val newNodes = expandNode(node)
+        val newNodes = expandNode(node, child)
+
         println("Expanding $node into $newNodes")
 
         onExpanded(node, newNodes)
@@ -108,7 +108,7 @@ abstract class GrammarFuzzer(private val grammar: Grammar) {
         return allTerminals()
     }
 
-    protected abstract fun chooseChild(children: Collection<Production>): Production
-    protected abstract fun chooseNodeExpansion(nodes: List<Node>): Node
+    // protected abstract fun chooseChild(currDepth: Int, children: Collection<Production>): Production
+    protected abstract fun chooseNodeExpansion(nodes: List<Node>): Pair<Node, Production>
     protected abstract fun onExpanded(node: Node, newNodes: List<Node>)
 }

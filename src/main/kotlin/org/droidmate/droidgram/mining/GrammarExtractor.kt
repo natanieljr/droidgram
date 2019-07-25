@@ -179,7 +179,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
     }
 
-    private fun extractGrammar() {
+    private fun extractGrammar(): Grammar {
         assert(!mIsInitialized) { "Grammar cannot be re-generated in the same instance" }
         mIsInitialized = true
 
@@ -238,6 +238,8 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         check(mGrammar.isValid()) {
             "Grammar is invalid"
         }
+
+        return mGrammar
     }
 
     /**
@@ -301,16 +303,18 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         @JvmStatic
-        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path) {
+        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path): Grammar {
             val extractor = GrammarExtractor(inputDir, coverageDir)
-            extractor.extractGrammar()
+            val grammar = extractor.extractGrammar()
 
             extractor.write(false, outputDir)
             extractor.write(true, outputDir)
+
+            return grammar
         }
 
         @JvmStatic
-        fun extract(args: Array<String>) {
+        fun extract(args: Array<String>): Grammar {
             check(args.isNotEmpty()) { "Missing model dir argument" }
             val inputDir = (
                     Files.list(Paths.get(args.first()))
@@ -324,7 +328,8 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
 
             val coverageDir = inputDir.parent.resolveSibling("coverage")
             check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
-            extractGrammar(inputDir, outputDir, coverageDir)
+
+            return extractGrammar(inputDir, outputDir, coverageDir)
         }
 
         @JvmStatic

@@ -397,10 +397,10 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
 
             val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
                 .toAbsolutePath()
-            val numSeeds = args.getOrNull(2)?.toInt() ?: 10
+            val numSeeds = args.getOrNull(2)?.toInt() ?: 11
             val useCoverage= args.getOrNull(3)?.toBoolean() ?: false
 
-            for(seed in 1..numSeeds) {
+            for(seed in 0..numSeeds) {
                 generateSeed(grammar, seed, useCoverage, outputDir)
             }
         }

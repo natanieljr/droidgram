@@ -5,6 +5,8 @@ import org.droidmate.deviceInterface.exploration.LaunchApp
 import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.deviceInterface.exploration.isPressBack
+import org.droidmate.droidgram.fuzzer.CodeTerminalGuidedFuzzer
+import org.droidmate.droidgram.fuzzer.toCoverageGrammar
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Symbol
 import org.slf4j.Logger
@@ -17,6 +19,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.BiPredicate
+import kotlin.random.Random
 import kotlin.streams.toList
 
 class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Path?) {
@@ -180,7 +183,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
     }
 
     private fun extractGrammar(): Grammar {
-        assert(!mIsInitialized) { "Grammar cannot be re-generated in the same instance" }
+        check(!mIsInitialized) { "Grammar cannot be re-generated in the same instance" }
         mIsInitialized = true
 
         val trace = getTraceFile(mModelDir)
@@ -333,8 +336,73 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         @JvmStatic
+        private fun fuzz(grammar: Grammar, seed: Int, coverageGrammar: Boolean): List<List<Symbol>> {
+            val grammarMap = if (coverageGrammar) {
+                grammar.extractedGrammar.toCoverageGrammar()
+            } else {
+                grammar.extractedGrammar
+            }
+
+            val generator = CodeTerminalGuidedFuzzer(
+                Grammar(initialGrammar = grammarMap),
+                random = Random(seed),
+                printLog = false
+            )
+            val result = mutableListOf<List<Symbol>>()
+
+            while (generator.nonCoveredSymbols.isNotEmpty()) {
+
+                val nonCoveredSymbolsBeforeRun = generator.nonCoveredSymbols
+                val input = generator.fuzz()
+
+                val newlyCovered = nonCoveredSymbolsBeforeRun - generator.nonCoveredSymbols
+                println("Covered: $newlyCovered")
+                println("Missing: ${generator.nonCoveredSymbols}")
+
+                check(generator.nonCoveredSymbols.isEmpty() || newlyCovered.isNotEmpty()) {
+                    "No new terminals were covered in this run. " +
+                            "Original: $nonCoveredSymbolsBeforeRun. Actual: ${generator.nonCoveredSymbols}"
+                }
+
+                result.add(input)
+            }
+
+            return result
+        }
+
+        @JvmStatic
+        fun generateSeed(grammar: Grammar, seed: Int, useCoverage: Boolean, outputDir: Path) {
+            val inputs = fuzz(grammar, seed, useCoverage)
+
+            val sb = StringBuilder()
+            inputs.forEach { input ->
+                sb.appendln(input
+                    .filter { it.value.contains("(") }
+                    .joinToString(" ") { it.value })
+            }
+
+            val outputFile = if (useCoverage) {
+                outputDir.resolve("coverageInputs${seed.toString().padStart(2, '0')}")
+            } else {
+                outputDir.resolve("inputs${seed.toString().padStart(2, '0')}")
+            }
+
+            Files.write(outputFile, sb.toString().toByteArray())
+        }
+
+
+        @JvmStatic
         fun main(args: Array<String>) {
-            extract(args)
+            val grammar = extract(args)
+
+            val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
+                .toAbsolutePath()
+            val numSeeds = args.getOrNull(2)?.toInt() ?: 10
+            val useCoverage= args.getOrNull(3)?.toBoolean() ?: false
+
+            for(seed in 1..numSeeds) {
+                generateSeed(grammar, seed, useCoverage, outputDir)
+            }
         }
     }
 }

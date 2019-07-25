@@ -33,7 +33,7 @@ object ExperimentMain {
             CommandLineConfig.useCoverageGrammar,
             description = "Use coverage grammar inputs.",
             short = "cg",
-            metavar = "Booloean"
+            metavar = "Boolean"
         )
     )
 

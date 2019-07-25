@@ -1,6 +1,6 @@
 package org.droidmate.droidgram
 
-import org.droidmate.droidgram.fuzzer.TerminalCoverageGuidedFuzzer
+import org.droidmate.droidgram.fuzzer.TerminalGuidedFuzzer
 import org.droidmate.droidgram.grammar.Symbol
 import kotlin.system.measureTimeMillis
 import kotlin.test.assertEquals
@@ -41,7 +41,7 @@ fun String.isNonTerminal(): Boolean {
     return defaultNonTerminalRegex.matches(this)
 }
 
-fun guidedFuzz(generator: TerminalCoverageGuidedFuzzer, expected: String): List<Symbol> {
+fun guidedFuzz(generator: TerminalGuidedFuzzer, expected: String): List<Symbol> {
     var result: List<Symbol> = emptyList()
     val nonCoveredSymbolsBeforeRun = generator.nonCoveredSymbols
     println("Fuzzing time: ${measureTimeMillis {

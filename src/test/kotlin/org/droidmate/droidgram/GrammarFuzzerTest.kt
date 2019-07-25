@@ -1,7 +1,7 @@
 package org.droidmate.droidgram
 
 import org.droidmate.droidgram.fuzzer.RandomFuzzer
-import org.droidmate.droidgram.fuzzer.TerminalCoverageGuidedFuzzer
+import org.droidmate.droidgram.fuzzer.TerminalGuidedFuzzer
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Symbol
 import org.junit.Test
@@ -22,7 +22,7 @@ class GrammarFuzzerTest {
 
     @Test
     fun terminalGuidedFuzz() {
-        val generator = TerminalCoverageGuidedFuzzer(Grammar(initialGrammar = grammarTitle))
+        val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammarTitle))
         val inputList = mutableListOf<List<Symbol>>()
 
         inputList.add(
@@ -52,7 +52,7 @@ class GrammarFuzzerTest {
 
     @Test
     fun terminalGuidedFuzzURL() {
-        val generator = TerminalCoverageGuidedFuzzer(Grammar(initialGrammar = grammarURL))
+        val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammarURL))
         val inputList = mutableListOf<List<Symbol>>()
 
         inputList.add(guidedFuzz(generator, "[http, ://, cispa.saarland, , ?, abc, =, def]"))

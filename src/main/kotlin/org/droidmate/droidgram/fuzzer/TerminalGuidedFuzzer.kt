@@ -6,7 +6,7 @@ import org.droidmate.droidgram.grammar.Symbol
 import java.util.LinkedList
 import kotlin.random.Random
 
-class TerminalCoverageGuidedFuzzer(
+open class TerminalGuidedFuzzer(
     grammar: Grammar,
     random: Random = Random(0),
     printLog: Boolean = false
@@ -18,22 +18,25 @@ class TerminalCoverageGuidedFuzzer(
             .filterNot { it in coveredSymbols }
             .toSet()
 
+    private fun Production.uncoveredSymbols(): Set<Symbol> {
+        return this.terminals
+            .filterNot { it in coveredSymbols }
+            .toSet()
+    }
+
     private fun Production.getCoverage(): Set<Symbol> {
-        return this.newTerminals(coveredSymbols)
+        return this.uncoveredSymbols()
             .toMutableSet()
     }
 
     private fun Production.getExpansionCoverage(): Map<Production, Set<Symbol>> {
-        val coverage = if (this.isTerminal()) {
+        return if (this.isTerminal()) {
             mapOf(Pair(this, this.getCoverage()))
         } else {
             grammar[this]
                 .map { Pair(it, it.getCoverage()) }
                 .toMap()
         }
-
-        // debug("Coverage of production $this: $coverage")
-        return coverage
     }
 
     /**
@@ -152,17 +155,18 @@ class TerminalCoverageGuidedFuzzer(
                 .map { entry ->
                     Pair(
                         entry.key,
-                        entry.value
-                            .maxBy { it.value.size }
+                        entry.value.map { it.value.size }
+                            .shuffled(random)
+                            .max()
                             ?: throw IllegalStateException("This should never happen")
                     )
                 }
 
             val bestResult = maxPerEntry
-                .maxBy { it.second.value.size }
+                .shuffled(random)
+                .maxBy { it.second }
                 ?.first ?: throw IllegalStateException("This should never happen")
 
-            // debug("Best production: $bestResult")
             Pair(bestResult.node, bestResult.baseExpansion)
         // Otherwise look for an epsilon
         } else {

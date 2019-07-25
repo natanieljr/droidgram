@@ -15,9 +15,9 @@ abstract class GrammarFuzzer(
         check(grammar.isValid()) { "The grammar is not valid." }
     }
 
-    // private var nodeList: MutableList<Node>
+    private val nodeList: MutableList<Node> = mutableListOf()
 
-    private lateinit var root: Node
+    protected lateinit var root: Node
 
     protected fun debug(msg: String) {
         if (printLog) {
@@ -80,7 +80,7 @@ abstract class GrammarFuzzer(
         for (symbol in child.values) {
             val newNode = node.addChild(symbol)
 
-            // nodeList.add(newNode)
+            nodeList.add(newNode)
             result.add(newNode)
         }
 
@@ -101,7 +101,7 @@ abstract class GrammarFuzzer(
 
     open fun fuzz(): List<Symbol> {
         root = Node(grammar.getRoot())
-        // nodeList = mutableListOf()
+        nodeList.clear()
 
         var nonExpandedNodes = nonExpandedNodes()
 
@@ -118,7 +118,6 @@ abstract class GrammarFuzzer(
         return allTerminals()
     }
 
-    // protected abstract fun chooseChild(currDepth: Int, children: Collection<Production>): Production
     protected abstract fun chooseNodeExpansion(nodes: List<Node>): Pair<Node, Production>
     protected abstract fun onExpanded(node: Node, newNodes: List<Node>)
 }

@@ -68,6 +68,10 @@ open class Production(
         return values.all { it == Symbol.epsilon }
     }
 
+    fun isEmpty(): Boolean {
+        return values.all { it == Symbol.empty }
+    }
+
     fun hasValue(): Boolean {
         return values.isNotEmpty()
     }

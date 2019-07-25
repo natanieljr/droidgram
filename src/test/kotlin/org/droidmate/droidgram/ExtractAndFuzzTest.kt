@@ -1,6 +1,8 @@
 package org.droidmate.droidgram
 
-import org.droidmate.droidgram.fuzzer.TerminalCoverageGuidedFuzzer
+import org.droidmate.droidgram.fuzzer.CodeTerminalGuidedFuzzer
+import org.droidmate.droidgram.fuzzer.TerminalGuidedFuzzer
+import org.droidmate.droidgram.fuzzer.toCoverageGrammar
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Symbol
 import org.droidmate.droidgram.mining.GrammarExtractor
@@ -25,7 +27,7 @@ class ExtractAndFuzzTest {
     @Test
     fun fuzzExtractedGrammar() {
         val grammar = extractGrammar()
-        val generator = TerminalCoverageGuidedFuzzer(Grammar(initialGrammar = grammar.extractedGrammar), printLog = false)
+        val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammar.extractedGrammar), printLog = false)
 
         val inputList = mutableListOf<List<Symbol>>()
 
@@ -36,14 +38,51 @@ class ExtractAndFuzzTest {
             )
         )
 
-        inputList.add(guidedFuzz(generator, "[ClickEvent(w05), ClickEvent(w07), LongClickEvent(w00), ClickEvent(w08), ClickEvent(w11), LongClickEvent(w09), ClickEvent(w10), LongClickEvent(w06), ClickEvent(w06), LongClickEvent(w08), LongClickEvent(w11), LongClickEvent(w05), ClickEvent(w00), LongClickEvent(w07), ClickEvent(w09), LongClickEvent(w10), ClickEvent(w01), ClickEvent(w02), TextInsert(w03,wkrxnfmqg), ClickEvent(w04), TextInsert(w03,apezsdzspmqcxjt), PressBack(s02), ]"))
+        inputList.add(
+            guidedFuzz(
+                generator,
+                "[ClickEvent(w01), LongClickEvent(w13), ClickEvent(w13), ClickEvent(w54), ClickEvent(w55), LongClickEvent(w59), LongClickEvent(w60), ClickEvent(w57), ClickEvent(w11), ClickEvent(w06), ClickEvent(w05), ClickEvent(w09), ClickEvent(w08), LongClickEvent(w08), LongClickEvent(w05), LongClickEvent(w11), LongClickEvent(w06), ClickEvent(w07), LongClickEvent(w00), LongClickEvent(w07), LongClickEvent(w10), ClickEvent(w00), LongClickEvent(w09), ClickEvent(w10), ClickEvent(w01), ClickEvent(w12), ClickEvent(w02), PressBack(s02), ClickEvent(w04), TextInsert(w03,apezsdzspmqcxjt), TextInsert(w03,wkrxnfmqg), ]"
+            )
+        )
 
         inputList.add(
             guidedFuzz(
                 generator,
-                "[ClickEvent(w01), ClickEvent(w13), ClickEvent(w54), ClickEvent(w56), ClickEvent(w55), ClickEvent(w60), LongClickEvent(w59), ClickEvent(w58), LongClickEvent(w55), ClickEvent(w59), LongClickEvent(w56), LongClickEvent(w60), LongClickEvent(w58), ClickEvent(w57), ClickEvent(w01), LongClickEvent(w13), ClickEvent(w12), ClickEvent(w14), ClickEvent(w39), TextInsert(w40,grnrryqjbbdsgmome), ClickEvent(w20), TextInsert(w40,zumetf), ClickEvent(w30), ClickEvent(w16), ClickEvent(w15), TextInsert(w18,qjlbqorrepnhuagxqy), PressBack(s04), TextInsert(w18,xzbvoua), ClickEvent(w16), ClickEvent(w17), TextInsert(w18,jcmxghpteqrgfnzdjsj), TextInsert(w18,lixxdwxhjctsalrmgb), PressBack(s05), ClickEvent(w16), ClickEvent(w27), ClickEvent(w49), PressBack(s26), TextInsert(w50,kuhwruwvtdajqopxhac), ClickEvent(w16), ClickEvent(w48), ClickEvent(w51), ClickEvent(w52), ClickEvent(w53), ClickEvent(w47), ClickEvent(w02), PressBack(s28), ClickEvent(w51), ClickEvent(w38), TextInsert(w18,wfzizedvmxsf), PressBack(s29), ]"
+                "[ClickEvent(w01), ClickEvent(w14), ClickEvent(w27), ClickEvent(w14), ClickEvent(w25), ClickEvent(w19), ClickEvent(w34), ClickEvent(w29), ClickEvent(w32), ClickEvent(w30), ClickEvent(w33), ClickEvent(w35), ClickEvent(w36), ClickEvent(w37), Click(w21), ClickEvent(w39), TextInsert(w40,qdxymtaroanfdlrh), ClickEvent(w20), ClickEvent(w28), TextInsert(w40,siwesli), ClickEvent(w16), ClickEvent(w42), ClickEvent(w23), Tick(w24), Click(w24), ClickEvent(w22), Tick(w23), ClickEvent(w26), TextInsert(w18,lixxdwxhjctsalrmgb), TextInsert(w18,jcmxghpteqrgfnzdjsj), PressBack(s05), ClickEvent(w16), ClickEvent(w15), TextInsert(w18,xzbvoua), TextInsert(w18,qjlbqorrepnhuagxqy), PressBack(s04), ClickEvent(w01), ClickEvent(w44), ]"
             )
         )
+
+        while (generator.nonCoveredSymbols.isNotEmpty()) {
+            inputList.add(guidedFuzz(generator, ""))
+        }
+
+        inputList.forEach { input ->
+            println(input)
+        }
+    }
+
+    @Test
+    fun fuzzExtractedCodeGrammarTerminalFuzzer() {
+        val grammar = extractGrammar().extractedGrammar.toCoverageGrammar()
+        val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammar), printLog = false)
+
+        val inputList = mutableListOf<List<Symbol>>()
+
+        while (generator.nonCoveredSymbols.isNotEmpty()) {
+            inputList.add(guidedFuzz(generator, ""))
+        }
+
+        inputList.forEach { input ->
+            println(input)
+        }
+    }
+
+    @Test
+    fun fuzzExtractedCodeGrammarCodeFuzzer() {
+        val grammar = extractGrammar().extractedGrammar.toCoverageGrammar()
+        val generator = CodeTerminalGuidedFuzzer(Grammar(initialGrammar = grammar), printLog = false)
+
+        val inputList = mutableListOf<List<Symbol>>()
 
         while (generator.nonCoveredSymbols.isNotEmpty()) {
             inputList.add(guidedFuzz(generator, ""))

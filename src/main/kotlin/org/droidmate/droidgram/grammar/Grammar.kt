@@ -24,7 +24,7 @@ class Grammar @JvmOverloads constructor(
         return grammar.get(key)
     }
 
-    val extractedGrammar
+    val extractedGrammar: Map<Production, Set<Production>>
         get() = grammar.toMap()
 
     private val grammar: MutableMap<Production, MutableSet<Production>> by lazy {

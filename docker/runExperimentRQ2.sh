@@ -22,10 +22,10 @@ echo "Removing previous grammar and input values from ${INPUT_DIR}/apks/"
 rm -rf ${INPUT_DIR}/apks/*.txt
 
 echo "Extracting grammar from ${INPUT_DIR}/apks/"
-./gradlew run --args="extract ${INPUT_DIR}/apks/droidMate/model/ ${INPUT_DIR}/apks/ true"
+./gradlew run --args="extract ${INPUT_DIR}/apks/droidMate/model/ ${INPUT_DIR}/apks/ 11 true"
 
-echo "Generating input values from grammar into ${INPUT_DIR}/apks"
-python3 code_grammar_terminal_inputs.py ${INPUT_DIR} apks ${NR_SEEDS} true
+# echo "Generating input values from grammar into ${INPUT_DIR}/apks"
+# python3 code_grammar_terminal_inputs.py ${INPUT_DIR} apks ${NR_SEEDS} true
 
 for s in 00 01 02 03 04 05 06 07 08 09 10
 do

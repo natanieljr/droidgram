@@ -28,16 +28,16 @@ class GrammarFuzzerTest {
         inputList.add(
             guidedFuzz(
                 generator,
-                "[Generating Software Tests, :, Breaking Software,  for, Fun, and, Profit]"
+                "[The Fuzzing Book, :, Generating Software Tests,  for, Security, and, Reliability]"
             )
         )
 
-        inputList.add(guidedFuzz(generator, "[, Fuzzing, :, Principles, Techniques and Tools]"))
+        inputList.add(guidedFuzz(generator, "[, Fuzzing, :, Breaking Software,  for, Fun, and, Profit]"))
 
         inputList.add(
             guidedFuzz(
                 generator,
-                "[The Art of , Fuzzing, :, Tools and Techniques for , Breaking Software]"
+                "[The Joy of , Fuzzing, :, Principles, Techniques and Tools,  for, Robustness, and, Robustness]"
             )
         )
 
@@ -55,16 +55,16 @@ class GrammarFuzzerTest {
         val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammarURL))
         val inputList = mutableListOf<List<Symbol>>()
 
-        inputList.add(guidedFuzz(generator, "[http, ://, cispa.saarland, , ?, abc, =, def]"))
+        inputList.add(guidedFuzz(generator, "[https, ://, user:password, @, cispa.saarland, , ?, x, 1, 5, =, 4]"))
 
         inputList.add(
             guidedFuzz(
                 generator,
-                "[https, ://, www.google.com, /, ?, x, 0, 1, =, x, 2, 3, &, x, 4, 5, =, x, 6, 7]"
+                "[http, ://, fuzzingbook.com, /, ?, abc, =, x, 3, 0, &, x, 7, 6, =, 8]"
             )
         )
 
-        inputList.add(guidedFuzz(generator, "[ftp, ://, fuzzingbook.com, /<id>, ?, x, 8, 9, =, x, 7, 8]"))
+        inputList.add(guidedFuzz(generator, "[ftps, ://, www.google.com, :, 8080, /<id>, ?, x, 2, 9, =, def]"))
 
         while (generator.nonCoveredSymbols.isNotEmpty()) {
             inputList.add(guidedFuzz(generator, ""))

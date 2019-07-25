@@ -390,7 +390,6 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             Files.write(outputFile, sb.toString().toByteArray())
         }
 
-
         @JvmStatic
         fun main(args: Array<String>) {
             val grammar = extract(args)
@@ -398,9 +397,9 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
                 .toAbsolutePath()
             val numSeeds = args.getOrNull(2)?.toInt() ?: 11
-            val useCoverage= args.getOrNull(3)?.toBoolean() ?: false
+            val useCoverage = args.getOrNull(3)?.toBoolean() ?: false
 
-            for(seed in 0..numSeeds) {
+            for (seed in 0..numSeeds) {
                 generateSeed(grammar, seed, useCoverage, outputDir)
             }
         }

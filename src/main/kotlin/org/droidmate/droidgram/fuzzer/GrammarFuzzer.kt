@@ -4,8 +4,13 @@ import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
 import org.droidmate.droidgram.grammar.Symbol
 import java.util.LinkedList
+import kotlin.random.Random
 
-abstract class GrammarFuzzer(protected val grammar: Grammar) {
+abstract class GrammarFuzzer(
+    protected val grammar: Grammar,
+    protected val random: Random,
+    protected val printLog: Boolean
+) {
     init {
         check(grammar.isValid()) { "The grammar is not valid." }
     }
@@ -13,6 +18,12 @@ abstract class GrammarFuzzer(protected val grammar: Grammar) {
     // private var nodeList: MutableList<Node>
 
     private lateinit var root: Node
+
+    protected fun debug(msg: String) {
+        if (printLog) {
+            println(msg)
+        }
+    }
 
     private fun allTerminals(): List<Symbol> {
         val stack = LinkedList<Node>()
@@ -83,7 +94,7 @@ abstract class GrammarFuzzer(protected val grammar: Grammar) {
 
         val newNodes = expandNode(node, child)
 
-        println("Expanding $node into $newNodes")
+        debug("Expanding $node into $newNodes")
 
         onExpanded(node, newNodes)
     }

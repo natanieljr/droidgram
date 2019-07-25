@@ -15,8 +15,9 @@ data class SearchData(
 
 class TerminalCoverageGuidedFuzzer(
     grammar: Grammar,
-    private val random: Random = Random(0)
-) : GrammarFuzzer(grammar) {
+    random: Random = Random(0),
+    printLog: Boolean = false
+) : GrammarFuzzer(grammar, random, printLog) {
 
     private val coveredSymbols: MutableSet<Symbol> = mutableSetOf()
     val nonCoveredSymbols
@@ -38,7 +39,7 @@ class TerminalCoverageGuidedFuzzer(
                 .toMap()
         }
 
-        println("Coverage of production $this: $coverage")
+        debug("Coverage of production $this: $coverage")
         return coverage
     }
 
@@ -159,7 +160,7 @@ class TerminalCoverageGuidedFuzzer(
                 .maxBy { it.second.value.size }
                 ?.first ?: throw IllegalStateException("This should never happen")
 
-            println("Best production: $bestResult")
+            debug("Best production: $bestResult")
             Pair(bestResult.node, bestResult.baseExpansion)
         // Otherwise look for an epsilon
         } else {

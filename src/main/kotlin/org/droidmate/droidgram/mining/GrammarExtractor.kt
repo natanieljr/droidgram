@@ -306,7 +306,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         @JvmStatic
-        fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path): Grammar {
+        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path): Grammar {
             val extractor = GrammarExtractor(inputDir, coverageDir)
             val grammar = extractor.extractGrammar()
 
@@ -371,7 +371,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         @JvmStatic
-        fun generateSeed(grammar: Grammar, seed: Int, useCoverage: Boolean, outputDir: Path) {
+        private fun generateSeed(grammar: Grammar, seed: Int, useCoverage: Boolean, outputDir: Path) {
             val inputs = fuzz(grammar, seed, useCoverage)
 
             val sb = StringBuilder()
@@ -390,10 +390,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             Files.write(outputFile, sb.toString().toByteArray())
         }
 
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val grammar = extract(args)
-
+        fun fuzzGrammar(args: Array<String>, grammar: Grammar) {
             val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
                 .toAbsolutePath()
             val numSeeds = args.getOrNull(2)?.toInt() ?: 11
@@ -402,6 +399,13 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             for (seed in 0..numSeeds) {
                 generateSeed(grammar, seed, useCoverage, outputDir)
             }
+        }
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val grammar = extract(args)
+
+            fuzzGrammar(args, grammar)
         }
     }
 }

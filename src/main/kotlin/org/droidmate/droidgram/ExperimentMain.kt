@@ -50,7 +50,9 @@ object ExperimentMain {
                     exitProcess(0)
                 }
                 args.contains("extract") -> {
-                    GrammarExtractor.extract(args.filterNot { it.contains("extract") }.toTypedArray())
+                    val extractorArgs = args.filterNot { it.contains("extract") }.toTypedArray()
+                    val grammar = GrammarExtractor.extract(extractorArgs)
+                    GrammarExtractor.fuzzGrammar(extractorArgs, grammar)
                     exitProcess(0)
                 }
                 args.contains("explore") -> {

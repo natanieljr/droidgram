@@ -3,130 +3,70 @@ package org.droidmate.droidgram.fuzzer
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
 import org.droidmate.droidgram.grammar.Symbol
+import java.util.LinkedList
 import kotlin.random.Random
+
+data class SearchData(
+    val node: Node,
+    val baseExpansion: Production,
+    val currentExpansion: Production,
+    val currentDepth: Int
+)
 
 class TerminalCoverageGuidedFuzzer(
     grammar: Grammar,
     private val random: Random = Random(0)
 ) : GrammarFuzzer(grammar) {
-    private val coveredSymbols: MutableSet<Symbol> = mutableSetOf()
 
-    /**
-     * Gets the best available expansion for the current symbol
-     */
-    private fun Symbol.getBestExpansion(): Pair<Production, Set<Symbol>> {
-        val possibleExpansions = grammar[this].orEmpty()
-        val productionCoverage = possibleExpansions.map { expansion ->
-            Pair(
-                expansion,
-                expansion.newTerminals(coveredSymbols)
-            )
+    private val coveredSymbols: MutableSet<Symbol> = mutableSetOf()
+    val nonCoveredSymbols
+        get() = grammar.definedTerminals()
+            .filterNot { it in coveredSymbols }
+            .toSet()
+
+    private fun Production.getCoverage(): Set<Symbol> {
+        return this.newTerminals(coveredSymbols)
+            .toMutableSet()
+    }
+
+    private fun Production.getExpansionCoverage(): Map<Production, Set<Symbol>> {
+        val coverage = if (this.isTerminal()) {
+            mapOf(Pair(this, this.getCoverage()))
+        } else {
+            grammar[this]
+                .map { Pair(it, it.getCoverage()) }
+                .toMap()
         }
 
-        val maxCoverage = productionCoverage
-            .map { it.second.size }
-            .max()
-
-        return productionCoverage.filter { it.second.size == maxCoverage }
-            .random(random)
+        println("Coverage of production $this: $coverage")
+        return coverage
     }
 
     /**
      * Returns a production which contains <EMPTY> (Epsilon) or a random one.
      * Used when no expansion rule provided new coverage
      */
-    private fun List<Symbol>.epsilonOrRandom(): Pair<Symbol, Production> {
-        val productionsWithEpsilon = this.map { production ->
-            val epsilon = grammar[production]
-                .orEmpty()
-                .first { it.isEpsilon() }
+    private fun List<Node>.epsilonOrRandom(): Pair<Node, Production> {
+        val productionsWithEpsilon = this.mapNotNull { production ->
+            val epsilon = grammar[production.value]
+                .firstOrNull { it.isEpsilon() }
 
-            Pair(production, epsilon)
+            if (epsilon != null) {
+                Pair(production, epsilon)
+            } else {
+                null
+            }
         }
 
         return if (productionsWithEpsilon.isNotEmpty()) {
             productionsWithEpsilon.random(random)
         } else {
             val randomProduction = this.random(random)
-            val randomExpansion = grammar[randomProduction]
-                .orEmpty()
+            val randomExpansion = grammar[randomProduction.value]
                 .random(random)
 
             Pair(randomProduction, randomExpansion)
         }
-    }
-
-    /**
-     * Returns the symbol and expansion which have the highest new coverage
-     */
-    private fun Map<Symbol, Pair<Production, Set<Symbol>>>.best(): Pair<Symbol, Production> {
-        val maxCoverage = this.values.map { it.second.size }.max()
-
-        val bestExpansions = this
-            .filter { it.value.second.size == maxCoverage }
-
-        val randomNode = bestExpansions.entries.random(random)
-
-        return Pair(randomNode.key, randomNode.value.first)
-    }
-
-    private fun getBestProduction(symbols: List<Symbol>, maxDepth: Int): Pair<Symbol, Production> {
-        if (maxDepth <= 0) {
-            return symbols.epsilonOrRandom()
-        }
-
-        val symbolCoverage = symbols.map { symbol ->
-            Pair(symbol, symbol.getBestExpansion())
-        }.toMap()
-
-        if (symbolCoverage.size == 1) {
-            return symbolCoverage.entries
-                .map { Pair(it.key, it.value.first) }
-                .first()
-        } else if (symbolCoverage.any { it.value.second.isNotEmpty() }) {
-            return symbolCoverage.best()
-        }
-
-        val grandChildren = symbols
-            .map {
-                Pair(
-                    it,
-                    grammar[it]
-                        .orEmpty()
-                        .filter { p -> p.nonTerminals.isNotEmpty() }
-                        .map { p -> p.nonTerminals.first() }
-                )
-            }.toMap()
-
-        return grandChildren.entries
-            .map { entry ->
-                val symbol = entry.key
-                val possibleExpansion = entry.value
-
-                val bestExpansion = getBestProduction(possibleExpansion, maxDepth - 1)
-
-                Pair(symbol, bestExpansion.second)
-            }
-            .maxBy {
-                it.second.terminals
-                    .filter { p -> p !in coveredSymbols }.size
-            } ?: throw IllegalStateException("Should not have happened")
-    }
-
-    override fun chooseNodeExpansion(nodes: List<Node>): Pair<Node, Production> {
-        val currDepth = nodes.first().depth
-        val maxGrammarDepth = grammar.definedNonTerminals().size
-        val maxDepth = maxGrammarDepth - currDepth
-
-        val bestSymbol = getBestProduction(
-            nodes.map { it.value },
-            maxDepth
-        )
-
-        return Pair(
-            nodes.first { it.value == bestSymbol.first },
-            bestSymbol.second
-        )
     }
 
     override fun onExpanded(node: Node, newNodes: List<Node>) {
@@ -135,5 +75,95 @@ class TerminalCoverageGuidedFuzzer(
             .map { it.value }
 
         coveredSymbols.addAll(terminals)
+    }
+
+    override fun chooseNodeExpansion(nodes: List<Node>): Pair<Node, Production> {
+        val initialDepth = nodes.first().depth
+        val maxGrammarDepth = grammar.definedNonTerminals().size
+        val maxDepth = maxGrammarDepth - initialDepth
+
+        val queue = LinkedList<SearchData>()
+
+        queue.addAll(
+            nodes
+            .flatMap {
+                grammar[it.value]
+                    .map { expansion ->
+                        grammar.key(expansion).map { expansionKey ->
+                            SearchData(it, expansion, expansionKey, it.depth)
+                        }
+                    }
+                    .flatten()
+            }
+        )
+
+        // Only 1 possible expansion, skip everything
+        if (queue.size == 1) {
+            val singleElement = queue.single()
+            return Pair(singleElement.node, singleElement.baseExpansion)
+        }
+
+        var lastDepth = initialDepth
+        val currentDepthMap = mutableMapOf<SearchData, Map<Production, Set<Symbol>>>()
+
+        while (queue.isNotEmpty()) {
+            val searchData = queue.pop()
+
+            if (lastDepth > maxDepth) {
+                break
+                // While in the same depth, calculate and add to list
+            } else if (searchData.currentDepth == lastDepth) {
+                val possibleExpansions = searchData.currentExpansion.getExpansionCoverage()
+                currentDepthMap[searchData] = possibleExpansions
+
+                val newSearch = possibleExpansions.map {
+                    grammar.key(it.key).map { expansionKey ->
+                        SearchData(
+                            searchData.node,
+                            searchData.baseExpansion,
+                            expansionKey,
+                            searchData.currentDepth + 1
+                        )
+                    }
+                }.flatten()
+
+                queue.addAll(newSearch)
+            // Changed depth, check if any production leads to new coverage
+            } else {
+                // If has new coverage, stop and select from those
+                if (currentDepthMap.any { it.value.any { p -> p.value.isNotEmpty() } }) {
+                    break
+                // Otherwise clear caches and add current item
+                } else {
+                    currentDepthMap.clear()
+                    val possibleExpansions = searchData.currentExpansion.getExpansionCoverage()
+                    currentDepthMap[searchData] = possibleExpansions
+                }
+                lastDepth = searchData.currentDepth
+            }
+        }
+
+        // If any element has new coverage, take the best
+        return if (currentDepthMap.any { it.value.any { p -> p.value.isNotEmpty() } }) {
+            val maxPerEntry = currentDepthMap.entries
+                .map { entry ->
+                    Pair(
+                        entry.key,
+                        entry.value
+                            .maxBy { it.value.size }
+                            ?: throw IllegalStateException("This should never happen")
+                    )
+                }
+
+            val bestResult = maxPerEntry
+                .maxBy { it.second.value.size }
+                ?.first ?: throw IllegalStateException("This should never happen")
+
+            println("Best production: $bestResult")
+            Pair(bestResult.node, bestResult.baseExpansion)
+        // Otherwise look for an epsilon
+        } else {
+            nodes.epsilonOrRandom()
+        }
     }
 }

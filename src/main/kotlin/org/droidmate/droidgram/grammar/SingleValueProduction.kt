@@ -1,5 +1,6 @@
 package org.droidmate.droidgram.grammar
 
+/*
 class SingleValueProduction(val symbol: Symbol) : Production(symbol) {
     companion object {
         @JvmStatic
@@ -27,3 +28,4 @@ class SingleValueProduction(val symbol: Symbol) : Production(symbol) {
         return symbol.hashCode()
     }
 }
+*/

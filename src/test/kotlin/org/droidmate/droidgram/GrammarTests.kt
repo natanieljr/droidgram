@@ -2,7 +2,6 @@ package org.droidmate.droidgram
 
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
-import org.droidmate.droidgram.grammar.SingleValueProduction
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -37,21 +36,21 @@ class GrammarTests {
     fun invalidGrammarTest() {
         assert(!Grammar(
             initialGrammar = mapOf(
-                SingleValueProduction("<start>") to setOf(Production("<x>")),
-                SingleValueProduction("<y>") to setOf(Production("1"))
+                Production("<start>") to setOf(Production("<x>")),
+                Production("<y>") to setOf(Production("1"))
             )
         ).isValid())
 
         assert(!Grammar(initialGrammar = mapOf(
-            SingleValueProduction("<start>") to setOf(Production("123")))
+            Production("<start>") to setOf(Production("123")))
         ).isValid())
 
         assert(!Grammar(initialGrammar = mapOf(
-            SingleValueProduction("<start>") to emptySet())
+            Production("<start>") to emptySet())
         ).isValid())
 
         assert(!Grammar(initialGrammar = mapOf(
-            SingleValueProduction("<start>") to setOf(Production(arrayOf("1", "2", "3"))))
+            Production("<start>") to setOf(Production(arrayOf("1", "2", "3"))))
         ).isValid())
     }
 }

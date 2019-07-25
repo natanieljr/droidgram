@@ -4,6 +4,15 @@ open class Production(
     val values: List<Symbol>,
     val coverage: Set<Symbol> = emptySet()
 ) : Comparable<Production> {
+    companion object {
+        @JvmStatic
+        val epsilon = Production(Symbol.epsilon)
+        @JvmStatic
+        val start = Production(Symbol.start)
+        @JvmStatic
+        val empty = Production(Symbol.empty)
+    }
+
     constructor(value: Symbol, coverage: Set<Symbol> = emptySet()) : this(listOf(value), coverage)
 
     constructor(value: String, coverage: Set<Symbol> = emptySet()) : this(listOf(Symbol(value)), coverage)
@@ -16,6 +25,10 @@ open class Production(
 
     val nonTerminals by lazy {
         values.filterNot { it.isTerminal() }
+    }
+
+    fun isTerminal(): Boolean {
+        return values.all { it.isTerminal() }
     }
 
     fun asString(useCoverage: Boolean): String {

@@ -5,7 +5,6 @@ import org.droidmate.droidgram.fuzzer.TerminalCoverageGuidedFuzzer
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Symbol
 import org.junit.Test
-import kotlin.system.measureTimeMillis
 import kotlin.test.assertEquals
 
 class GrammarFuzzerTest {
@@ -19,34 +18,6 @@ class GrammarFuzzerTest {
             "[The Joy of , Fuzzing, :, Principles, Techniques and Tools,  for, Fun, and, Fun]",
             result.toString()
         )
-    }
-
-    private fun guidedFuzz(generator: TerminalCoverageGuidedFuzzer, expected: String): List<Symbol> {
-        var result : List<Symbol> = emptyList()
-        val nonCoveredSymbolsBeforeRun = generator.nonCoveredSymbols
-        println("Fuzzing time: ${measureTimeMillis {
-            result = generator.fuzz()
-        }} millis")
-
-        println("Fuzzed input: $result")
-
-        if (expected.isNotEmpty()) {
-            assertEquals(
-                expected,
-                result.toString()
-            )
-        }
-
-        val newlyCovered = nonCoveredSymbolsBeforeRun - generator.nonCoveredSymbols
-        println("Covered: $newlyCovered")
-        println("Missing: ${generator.nonCoveredSymbols}")
-
-        assert(generator.nonCoveredSymbols.isEmpty() || newlyCovered.isNotEmpty()) {
-            "No new terminals were covered in this run. " +
-                    "Original: $nonCoveredSymbolsBeforeRun. Actual: ${generator.nonCoveredSymbols}"
-        }
-
-        return result
     }
 
     @Test

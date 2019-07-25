@@ -6,13 +6,6 @@ import org.droidmate.droidgram.grammar.Symbol
 import java.util.LinkedList
 import kotlin.random.Random
 
-data class SearchData(
-    val node: Node,
-    val baseExpansion: Production,
-    val currentExpansion: Production,
-    val currentDepth: Int
-)
-
 class TerminalCoverageGuidedFuzzer(
     grammar: Grammar,
     random: Random = Random(0),
@@ -39,7 +32,7 @@ class TerminalCoverageGuidedFuzzer(
                 .toMap()
         }
 
-        debug("Coverage of production $this: $coverage")
+        // debug("Coverage of production $this: $coverage")
         return coverage
     }
 
@@ -98,6 +91,8 @@ class TerminalCoverageGuidedFuzzer(
             }
         )
 
+        debug("Possible expansions: ${queue.joinToString { it.baseExpansion.toString() } }")
+
         // Only 1 possible expansion, skip everything
         if (queue.size == 1) {
             val singleElement = queue.single()
@@ -106,6 +101,8 @@ class TerminalCoverageGuidedFuzzer(
 
         var lastDepth = initialDepth
         val currentDepthMap = mutableMapOf<SearchData, Map<Production, Set<Symbol>>>()
+
+        val seenElements = queue.map { it.baseExpansion }.distinct().toMutableSet()
 
         while (queue.isNotEmpty()) {
             val searchData = queue.pop()
@@ -127,6 +124,9 @@ class TerminalCoverageGuidedFuzzer(
                         )
                     }
                 }.flatten()
+                    .filterNot { it.currentExpansion in seenElements }
+
+                seenElements.addAll(newSearch.map { it.currentExpansion })
 
                 queue.addAll(newSearch)
             // Changed depth, check if any production leads to new coverage
@@ -139,8 +139,10 @@ class TerminalCoverageGuidedFuzzer(
                     currentDepthMap.clear()
                     val possibleExpansions = searchData.currentExpansion.getExpansionCoverage()
                     currentDepthMap[searchData] = possibleExpansions
+
+                    lastDepth = searchData.currentDepth
+                    debug("Seeking new productions with depth $lastDepth")
                 }
-                lastDepth = searchData.currentDepth
             }
         }
 
@@ -160,7 +162,7 @@ class TerminalCoverageGuidedFuzzer(
                 .maxBy { it.second.value.size }
                 ?.first ?: throw IllegalStateException("This should never happen")
 
-            debug("Best production: $bestResult")
+            // debug("Best production: $bestResult")
             Pair(bestResult.node, bestResult.baseExpansion)
         // Otherwise look for an epsilon
         } else {

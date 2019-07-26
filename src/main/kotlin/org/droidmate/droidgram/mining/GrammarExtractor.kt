@@ -396,9 +396,9 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             }
 
             val outputFile = if (useCoverage) {
-                outputDir.resolve("coverageInputs${seed.toString().padStart(2, '0')}")
+                outputDir.resolve("coverageInputs${seed.toString().padStart(2, '0')}.txt")
             } else {
-                outputDir.resolve("inputs${seed.toString().padStart(2, '0')}")
+                outputDir.resolve("inputs${seed.toString().padStart(2, '0')}.txt")
             }
 
             Files.write(outputFile, sb.toString().toByteArray())

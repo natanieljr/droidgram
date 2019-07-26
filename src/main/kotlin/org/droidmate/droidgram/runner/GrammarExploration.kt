@@ -7,8 +7,6 @@ import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.device.android_sdk.Apk
 import org.droidmate.droidgram.exploration.CustomModelProvider
 import org.droidmate.droidgram.grammar.GrammarStrategy
-import org.droidmate.exploration.SelectorFunction
-import org.droidmate.exploration.StrategySelector
 import org.droidmate.misc.FailableExploration
 import java.util.UUID
 
@@ -18,19 +16,12 @@ object GrammarExploration {
         input: String,
         grammarMapping: Map<String, UUID>
     ): Map<Apk, FailableExploration> {
-        val selector: SelectorFunction = { _, pool, _ ->
-            val strategy = pool.getFirstInstanceOf(GrammarStrategy::class.java)
-
-            // Sync with grammar
-            strategy?.grammarWatcher?.join()
-
-            strategy
-        }
 
         val builder = ExploreCommandBuilder.fromConfig(cfg)
-            .insertBefore(StrategySelector.startExplorationReset, "Grammar", selector)
+        builder
             .withStrategy(
                 GrammarStrategy(
+                    builder.getNextSelectorPriority(),
                     input,
                     grammarMapping,
                     cfg[ConfigProperties.Exploration.widgetActionDelay]

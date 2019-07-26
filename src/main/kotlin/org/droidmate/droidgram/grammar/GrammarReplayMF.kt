@@ -100,11 +100,11 @@ class GrammarReplayMF(
         val action = when {
             currIndex < 0 -> context.resetApp()
 
-            currIndex >= inputList.size -> terminateApp()
+            currIndex >= inputList.size -> ExplorationAction.terminateApp()
 
             target.isBack() -> {
                 reachedInputs.add(target)
-                context.pressBack()
+                ExplorationAction.pressBack()
             }
 
             // Left the app for some reason (crash, exit, etc)

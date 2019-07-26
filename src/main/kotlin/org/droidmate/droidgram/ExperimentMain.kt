@@ -56,7 +56,11 @@ object ExperimentMain {
                     exitProcess(0)
                 }
                 args.contains("explore") -> {
-                    DefaultExploration.explore(args.filterNot { it.contains("explore") }.toTypedArray())
+                    DefaultExploration.explore(
+                        args
+                            .filterNot {
+                                it.contains("explore") }.toTypedArray()
+                    )
                     exitProcess(0)
                 }
             }

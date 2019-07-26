@@ -4,6 +4,7 @@ cd droidgram
 INPUT_DIR_RQ1=/test/experiment/input
 OUTPUT_DIR=/test/experiment/output_rq2
 INPUT_DIR=/test/experiment/input_rq2
+APKS_DIR=/test/experiment/apks
 NR_SEEDS=11
 
 mkdir ${INPUT_DIR}

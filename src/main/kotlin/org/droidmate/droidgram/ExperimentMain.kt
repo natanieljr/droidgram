@@ -88,6 +88,8 @@ object ExperimentMain {
                         "--UiAutomatorServer-imgQuality=10",
                         "--Output-outputDir=$experimentDir")
 
+                    log.info("Exploring input: $input (idx $seed)")
+
                     val experimentCfg = ExplorationAPI.config(experimentArgs, *extraCmdOptions())
                     GrammarExploration.exploreWithGrammarInput(experimentCfg, input, data.translationTable)
 

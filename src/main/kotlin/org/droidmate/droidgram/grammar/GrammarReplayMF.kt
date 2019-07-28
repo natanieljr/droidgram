@@ -39,7 +39,7 @@ class GrammarReplayMF(
     private val reachedInputs = mutableListOf<GrammarInput>()
 
     private val inputList by lazy {
-        generatedInput
+        val inputs = generatedInput
             .split(" ")
             .filter { it.isNotEmpty() }
             .filter { it.contains("(") }
@@ -50,6 +50,10 @@ class GrammarReplayMF(
 
                 listOf(fetchInput, actionInput)
             }
+
+        log.info("Produced action list: ${inputs.joinToString { it.toString() }}")
+
+        inputs
     }
 
     @Suppress("UNCHECKED_CAST")

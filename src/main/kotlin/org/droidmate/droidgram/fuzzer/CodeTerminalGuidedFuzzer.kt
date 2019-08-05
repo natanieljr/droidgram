@@ -5,7 +5,7 @@ import org.droidmate.droidgram.grammar.Symbol
 import java.util.LinkedList
 import kotlin.random.Random
 
-class CodeTerminalGuidedFuzzer(
+open class CodeTerminalGuidedFuzzer(
     grammar: Grammar,
     random: Random = Random(0),
     printLog: Boolean = false

@@ -5,28 +5,22 @@ import org.droidmate.droidgram.grammar.Production
 import org.droidmate.droidgram.grammar.Symbol
 import kotlin.random.Random
 
-open class TerminalGuidedFuzzer(
+open class NonTerminalGuidedFuzzer(
     grammar: Grammar,
     random: Random = Random(0),
     printLog: Boolean = false
 ) : CoverageGuidedFuzzer(grammar, random, printLog) {
-
-    val nonCoveredSymbols
-        get() = grammar.definedTerminals()
-            .filterNot { it in coveredSymbols }
-            .toSet()
-
-    override fun Production.uncoveredSymbols(): Set<Symbol> {
-        return this.terminals
-            .filterNot { it in coveredSymbols }
-            .toSet()
-    }
-
     override fun onExpanded(node: Node, newNodes: List<Node>) {
-        val terminals = newNodes
-            .filter { it.isTerminal() }
+        val nonTerminals = newNodes
+            .filter { it.isNonTerminal() }
             .map { it.value }
 
-        coveredSymbols.addAll(terminals)
+        coveredSymbols.addAll(nonTerminals)
+    }
+
+    override fun Production.uncoveredSymbols(): Set<Symbol> {
+        return this.nonTerminals
+            .filterNot { it in coveredSymbols }
+            .toSet()
     }
 }

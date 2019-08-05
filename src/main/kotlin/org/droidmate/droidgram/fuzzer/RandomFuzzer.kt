@@ -8,7 +8,7 @@ class RandomFuzzer(
     grammar: Grammar,
     random: Random = Random(0),
     printLog: Boolean = false
-) : GrammarFuzzer(grammar, random, printLog) {
+) : BaseGrammarFuzzer(grammar, random, printLog) {
     override fun chooseNodeExpansion(nodes: List<Node>): Pair<Node, Production> {
         val node = nodes.random(random)
         val children = grammar[node.value].orEmpty()

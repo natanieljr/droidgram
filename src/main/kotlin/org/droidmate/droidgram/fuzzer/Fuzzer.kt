@@ -21,7 +21,8 @@ class Fuzzer(
     private val outputDir: Path,
     private val numSeeds: Int = 11,
     private val useCoverage: Boolean = false,
-    private val random: Random = Random(0)
+    private val random: Random = Random(0),
+    private val debug: Boolean = false
 ) {
     constructor(grammar: Grammar, args: Array<String>) : this(
         grammar,
@@ -54,8 +55,11 @@ class Fuzzer(
             val input = generator.fuzz()
 
             val newlyCovered = nonCoveredSymbolsBeforeRun - generator.nonCoveredSymbols
-            println("Covered: $newlyCovered")
-            println("Missing: ${generator.nonCoveredSymbols}")
+
+            if (debug) {
+                println("Covered: $newlyCovered")
+                println("Missing: ${generator.nonCoveredSymbols}")
+            }
 
             if (generator.nonCoveredSymbols.isNotEmpty() && newlyCovered.isEmpty()) {
                 log.error(
@@ -94,13 +98,14 @@ class Fuzzer(
         val inputs = fuzz(seed, fuzzerProducer)
 
         val sb = StringBuilder()
+
         inputs.forEach { input ->
             sb.appendln(input
-                .filter { it.value.contains("(") }
+                .filter { it.value.contains("(") || it == Symbol.start }
                 .joinToString(" ") { it.value })
         }
 
-        if (appendFile) {
+        if (appendFile && Files.exists(outputFile)) {
             Files.write(outputFile, sb.toString().toByteArray(), StandardOpenOption.APPEND)
         } else {
             Files.write(outputFile, sb.toString().toByteArray())
@@ -167,13 +172,18 @@ class Fuzzer(
     fun fuzzRandomSymbolsGrammar() {
         val symbols = getTargetLOC(0.9, 0.1)
 
+        val symbolsGrammar = symbols.map { symbol ->
+            Pair(symbol, grammar.extractedGrammar.toCoverageGrammar(symbol))
+        }.toMap()
+
+
         for (seed in 0..numSeeds) {
             val outputFile = outputDir
-                .resolve("symbolInputs${seed.padStart(3)}.txt")
+                .resolve("symbolInputs${seed.padStart()}.txt")
 
-            symbols.forEachIndexed { index, symbol ->
-                val symbolGrammar = grammar.extractedGrammar.toCoverageGrammar(symbol)
-                log.info("Generating input $seed/$numSeeds for symbol $symbol ($index/${symbols.size})")
+            log.info("Generating input set $seed")
+            symbols.forEach { symbol ->
+                val symbolGrammar = symbolsGrammar.getValue(symbol)
                 generateSeed(seed, outputFile, true) { _, _ ->
                     SymbolGuidedFuzzer(
                         Grammar(initialGrammar = symbolGrammar),

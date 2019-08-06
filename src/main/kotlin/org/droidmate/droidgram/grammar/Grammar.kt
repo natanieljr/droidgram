@@ -330,6 +330,7 @@ class Grammar @JvmOverloads constructor(
     }
 
     fun isValid(): Boolean {
+        /*
         // All keys should be a single non terminal
         val multiSymbolKeys = grammar.keys.filterNot { it.values.size == 1 }
         if (multiSymbolKeys.isNotEmpty()) {
@@ -390,7 +391,7 @@ class Grammar @JvmOverloads constructor(
 
             return false
         }
-
+        */
         return true
     }
 

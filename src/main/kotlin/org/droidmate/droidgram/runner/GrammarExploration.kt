@@ -6,7 +6,6 @@ import org.droidmate.configuration.ConfigProperties
 import org.droidmate.configuration.ConfigurationWrapper
 import org.droidmate.device.android_sdk.Apk
 import org.droidmate.droidgram.exploration.CustomModelProvider
-import org.droidmate.droidgram.grammar.GrammarStrategy
 import org.droidmate.misc.FailableExploration
 import java.util.UUID
 

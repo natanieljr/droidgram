@@ -1,4 +1,4 @@
-package org.droidmate.droidgram.grammar
+package org.droidmate.droidgram.runner
 
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -9,6 +9,8 @@ import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.droidgram.exploration.CustomModel
 import org.droidmate.droidgram.exploration.CustomState
 import org.droidmate.droidgram.exploration.CustomWidget
+import org.droidmate.droidgram.grammar.notReachedTerminals
+import org.droidmate.droidgram.grammar.reachedTerminals
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.clickEvent

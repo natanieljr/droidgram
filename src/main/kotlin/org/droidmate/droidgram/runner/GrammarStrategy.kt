@@ -1,4 +1,4 @@
-package org.droidmate.droidgram.grammar
+package org.droidmate.droidgram.runner
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.droidgram.exploration.CustomState

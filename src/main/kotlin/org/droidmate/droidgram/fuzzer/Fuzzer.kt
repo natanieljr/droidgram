@@ -176,10 +176,13 @@ class Fuzzer(
             Pair(symbol, grammar.extractedGrammar.toCoverageGrammar(symbol))
         }.toMap()
 
+        Files.write(outputDir.resolve("targetSymbols.txt"),
+            symbols.joinToString("\n") { it.toString() }.toByteArray())
 
         for (seed in 0..numSeeds) {
             val outputFile = outputDir
                 .resolve("symbolInputs${seed.padStart()}.txt")
+            Files.deleteIfExists(outputFile)
 
             log.info("Generating input set $seed")
             symbols.forEach { symbol ->

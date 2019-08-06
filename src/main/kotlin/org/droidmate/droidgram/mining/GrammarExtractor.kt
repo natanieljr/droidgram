@@ -273,7 +273,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
 
         @JvmStatic
-        private fun GrammarExtractor.write(useCoverage: Boolean, outputDir: Path) {
+        private fun GrammarExtractor.write(useCoverage: Boolean, outputDir: Path, printToConsole: Boolean) {
             val fileNameSuffix = if (useCoverage) {
                 "WithCoverage"
             } else {
@@ -294,27 +294,34 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             val mappingFile = outputDir.resolve("translationTable$fileNameSuffix.txt")
             Files.write(mappingFile, mapping.toString().toByteArray())
 
-            println("Grammar:")
-            val grammarStr = this.grammar.asString(useCoverage)
-            print(grammarStr)
+            if (printToConsole) {
+                println("Grammar:")
+                val grammarStr = this.grammar.asString(useCoverage)
+                print(grammarStr)
 
-            println("\nMapping: $mappingFile")
-            print(mapping.toString())
+                println("\nMapping: $mappingFile")
+                print(mapping.toString())
+            }
         }
 
         @JvmStatic
-        private fun extractGrammar(inputDir: Path, outputDir: Path, coverageDir: Path): Grammar {
+        private fun extractGrammar(
+            inputDir: Path,
+            outputDir: Path,
+            coverageDir: Path,
+            printToConsole: Boolean
+        ): Grammar {
             val extractor = GrammarExtractor(inputDir, coverageDir)
             val grammar = extractor.extractGrammar()
 
-            extractor.write(false, outputDir)
-            extractor.write(true, outputDir)
+            extractor.write(false, outputDir, printToConsole)
+            extractor.write(true, outputDir, printToConsole)
 
             return grammar
         }
 
         @JvmStatic
-        fun extract(args: Array<String>): Grammar {
+        fun extract(args: Array<String>, printToConsole: Boolean): Grammar {
             check(args.isNotEmpty()) { "Missing model dir argument" }
             val inputDir = (
                     Files.list(Paths.get(args.first()))
@@ -329,12 +336,12 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             val coverageDir = inputDir.parent.resolveSibling("coverage")
             check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
 
-            return extractGrammar(inputDir, outputDir, coverageDir)
+            return extractGrammar(inputDir, outputDir, coverageDir, printToConsole)
         }
 
         @JvmStatic
         fun main(args: Array<String>) {
-            extract(args)
+            extract(args, true)
         }
     }
 }

@@ -52,7 +52,7 @@ object ExperimentMain {
                 }
                 args.contains("extract") -> {
                     val extractorArgs = args.filterNot { it.contains("extract") }.toTypedArray()
-                    val grammar = GrammarExtractor.extract(extractorArgs)
+                    val grammar = GrammarExtractor.extract(extractorArgs, true)
                     Fuzzer(grammar, extractorArgs)
                         .apply { fuzzAllSeeds() }
                     exitProcess(0)

@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 class ExtractAndFuzzTest {
     private fun extractGrammar(): Grammar {
         val args = arrayOf("./input/apks2/droidMate/model/", "./input/apks2")
-        return GrammarExtractor.extract(args)
+        return GrammarExtractor.extract(args, true)
     }
 
     @Test

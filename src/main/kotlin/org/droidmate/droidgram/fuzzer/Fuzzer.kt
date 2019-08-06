@@ -11,6 +11,7 @@ import java.lang.StringBuilder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 import kotlin.math.ceil
 import kotlin.math.pow
 import kotlin.random.Random
@@ -87,6 +88,7 @@ class Fuzzer(
     private fun generateSeed(
         seed: Int,
         outputFile: Path,
+        appendFile: Boolean,
         fuzzerProducer: (Map<Production, Set<Production>>, Int) -> CoverageGuidedFuzzer
     ) {
         val inputs = fuzz(seed, fuzzerProducer)
@@ -98,7 +100,11 @@ class Fuzzer(
                 .joinToString(" ") { it.value })
         }
 
-        Files.write(outputFile, sb.toString().toByteArray())
+        if (appendFile) {
+            Files.write(outputFile, sb.toString().toByteArray(), StandardOpenOption.APPEND)
+        } else {
+            Files.write(outputFile, sb.toString().toByteArray())
+        }
     }
 
     fun fuzzAllSeeds() {
@@ -110,7 +116,7 @@ class Fuzzer(
             } + "${seed.padStart()}.txt"
 
             val outputFile = outputDir.resolve(fileName)
-            generateSeed(seed, outputFile) { grammarMap, randomSeed ->
+            generateSeed(seed, outputFile, false) { grammarMap, randomSeed ->
                 CodeTerminalGuidedFuzzer(
                     Grammar(initialGrammar = grammarMap),
                     random = Random(randomSeed),
@@ -161,19 +167,14 @@ class Fuzzer(
     fun fuzzRandomSymbolsGrammar() {
         val symbols = getTargetLOC(0.9, 0.1)
 
-        symbols.forEachIndexed { index, symbol ->
-            for (seed in 0..numSeeds) {
-                val outputFile = outputDir
-                    .resolve("symbol_${index.padStart(3)}")
-                    .resolve("symbolInputs${seed.padStart(3)}.txt")
+        for (seed in 0..numSeeds) {
+            val outputFile = outputDir
+                .resolve("symbolInputs${seed.padStart(3)}.txt")
 
-                if (Files.notExists(outputFile.parent)) {
-                    Files.createDirectories(outputFile.parent)
-                }
-
+            symbols.forEachIndexed { index, symbol ->
                 val symbolGrammar = grammar.extractedGrammar.toCoverageGrammar(symbol)
                 log.info("Generating input $seed/$numSeeds for symbol $symbol ($index/${symbols.size})")
-                generateSeed(seed, outputFile) { _, _ ->
+                generateSeed(seed, outputFile, true) { _, _ ->
                     SymbolGuidedFuzzer(
                         Grammar(initialGrammar = symbolGrammar),
                         random = Random(seed),
@@ -191,7 +192,7 @@ class Fuzzer(
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val grammar = GrammarExtractor.extract(args)
+            val grammar = GrammarExtractor.extract(args, true)
 
             val fuzzer = Fuzzer(grammar, args)
             // fuzzer.fuzzAllSeeds()

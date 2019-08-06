@@ -3,6 +3,7 @@ package org.droidmate.droidgram.grammar
 import com.google.gson.GsonBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.LinkedList
 
 class Grammar @JvmOverloads constructor(
     initialGrammar: Map<Production, Set<Production>> =
@@ -282,29 +283,40 @@ class Grammar @JvmOverloads constructor(
             }.joinToString("\n")
     }
 
-    private fun reachableNonTerminals(
-        symbol: Symbol,
-        reachable: MutableSet<Symbol> = mutableSetOf()
-    ): Set<Symbol> {
-        reachable.add(symbol)
-        grammar.get(symbol).flatMap { value ->
-            val nonTerminals = value.nonTerminals
+    private fun reachableNonTerminals(): Set<Symbol> {
+        val reachable = mutableSetOf<Symbol>()
 
-            nonTerminals
-                .filterNot { reachable.contains(it) }
-                .flatMap { nonTerminal ->
-                reachableNonTerminals(nonTerminal, reachable)
+        val queue = LinkedList<Symbol>()
+        queue.add(Symbol.start)
+
+        while (queue.isNotEmpty()) {
+            val symbol = queue.pop()
+
+            if (symbol !in reachable) {
+                val newSymbols = grammar.get(symbol)
+                    .flatMap { value ->
+                        val nonTerminals = value.nonTerminals
+                            .filterNot { reachable.contains(it) }
+
+                        nonTerminals
+                    }
+
+                queue.addAll(newSymbols)
+                reachable.add(symbol)
             }
         }
 
         return reachable
     }
 
-    private fun unreachableNonTerminals(): Set<Symbol> =
-        grammar.keys
+    private fun unreachableNonTerminals(): Set<Symbol> {
+        val reachableNonTerminals = reachableNonTerminals()
+
+        return grammar.keys
             .map { it.values.first() }
-            .filterNot { it in reachableNonTerminals(Symbol.start) }
+            .filterNot { it in reachableNonTerminals }
             .toSet()
+    }
 
     fun definedNonTerminals(): Set<Symbol> =
         grammar.keys
@@ -330,7 +342,6 @@ class Grammar @JvmOverloads constructor(
     }
 
     fun isValid(): Boolean {
-        /*
         // All keys should be a single non terminal
         val multiSymbolKeys = grammar.keys.filterNot { it.values.size == 1 }
         if (multiSymbolKeys.isNotEmpty()) {
@@ -391,7 +402,6 @@ class Grammar @JvmOverloads constructor(
 
             return false
         }
-        */
         return true
     }
 

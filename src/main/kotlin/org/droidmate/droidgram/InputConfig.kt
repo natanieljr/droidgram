@@ -16,6 +16,14 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
         private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
     }
 
+    private val inputFilePrefix: String by lazy {
+        check(cfg.contains(CommandLineConfig.inputFilePrefix)) {
+            "Input directory not set. Use -f <STRING> to set the prefix"
+        }
+
+        cfg[CommandLineConfig.inputFilePrefix]
+    }
+
     val inputDir: Path by lazy {
         check(cfg.contains(CommandLineConfig.inputDir)) { "Input directory not set. Use -i <PATH> to set the path" }
 
@@ -34,27 +42,14 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
         }
     }
 
-    private val useCoverage by lazy {
-        if (cfg.contains(CommandLineConfig.useCoverageGrammar)) {
-            cfg[CommandLineConfig.useCoverageGrammar]
-        } else {
-            false
-        }
-    }
-
     private fun Path.isInputFile(seedNr: Int): Boolean {
         val seedNrStr = seedNr.toString().padStart(2, '0')
-        val inputFileName = if (useCoverage) {
-            "coverageInputs"
-        } else {
-            "inputs"
-        }
 
         val candidateName = this.fileName.toString()
 
-        val isInputFile = candidateName.startsWith(inputFileName) &&
+        val isInputFile = candidateName.startsWith(inputFilePrefix) &&
                 candidateName.endsWith(".txt") &&
-                (candidateName == "$inputFileName$seedNrStr.txt" || seedNr == -1)
+                (candidateName == "$inputFilePrefix$seedNrStr.txt" || seedNr == -1)
 
         if (isInputFile) {
             log.warn("Is input file: $isInputFile: $this")
@@ -72,15 +67,11 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
             .sorted()
 
         check(files.isNotEmpty()) {
-            val inputFilePattern = if (useCoverage) {
-                "coverageInputs*.txt"
-            } else {
-                "inputs*.txt"
-            }
-
-            "Input directory $inputDir doesn't contain any input file ($inputFilePattern)"
+            "Input directory $inputDir doesn't contain any input file ($inputFilePrefix)"
         }
-        check(seedNr == -1 || files.size == 1) { "Multiple input files were found for the same seed $seedNrStr" }
+        check(seedNr == -1 || files.size == 1) {
+            "Multiple input files were found for the same seed $seedNrStr"
+        }
 
         files
     }
@@ -93,11 +84,7 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
     }
 
     private val translationTableFile by lazy {
-        val translationTableName = if (useCoverage) {
-            "translationTableWithCoverage.txt"
-        } else {
-            "translationTable.txt"
-        }.toLowerCase()
+        val translationTableName = "translationTable.txt".toLowerCase()
 
         val file = Files.walk(inputDir)
             .filter {
@@ -106,7 +93,9 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
             .toList()
             .firstOrNull()
 
-        check(file != null) { "Input directory doesn't contain a translation table ($translationTableName)" }
+        check(file != null) {
+            "Input directory doesn't contain a translation table ($translationTableName)"
+        }
         file
     }
 

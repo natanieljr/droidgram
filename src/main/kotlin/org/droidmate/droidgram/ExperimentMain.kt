@@ -31,10 +31,10 @@ object ExperimentMain {
             metavar = "Int"
         ),
         CommandLineOption(
-            CommandLineConfig.useCoverageGrammar,
-            description = "Use coverage grammar inputs.",
-            short = "cg",
-            metavar = "Boolean"
+            CommandLineConfig.inputFilePrefix,
+            description = "Prefix for the input file name.",
+            short = "f",
+            metavar = "String"
         )
     )
 

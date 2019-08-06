@@ -35,7 +35,7 @@ do
 	cd droidgram
 
 	echo "Running grammar inputs from ${INPUT_DIR}/apks/"
-	./gradlew run --args="-i ${INPUT_DIR}/apks/ -s ${s} -cg true --Exploration-apksDir=${APKS_DIR} --Output-outputDir=${OUTPUT_DIR} --Exploration-launchActivityDelay=3000 --Exploration-widgetActionDelay=800 --Selectors-randomSeed=1 --Deploy-installApk=true --Deploy-uninstallApk=true --Selectors-pressBackProbability=0.00 --Strategies-explore=false --StatementCoverage-enableCoverage=true" || true
+	./gradlew run --args="-i ${INPUT_DIR}/apks/ -s ${s} -f symbolInputs --Exploration-apksDir=${APKS_DIR} --Output-outputDir=${OUTPUT_DIR} --Exploration-launchActivityDelay=3000 --Exploration-widgetActionDelay=800 --Selectors-randomSeed=1 --Deploy-installApk=true --Deploy-uninstallApk=true --Selectors-pressBackProbability=0.00 --Strategies-explore=false --StatementCoverage-enableCoverage=true" || true
 done
 
 echo "Summary"

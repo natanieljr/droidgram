@@ -19,8 +19,8 @@ data class GrammarInput(val grammarId: String, val widget: UUID, val action: Str
         val empty: GrammarInput
             get() = GrammarInput("empty", "empty".toUUID(), "empty", "empty")
 
-        fun fromString(oiginalInput: String, translationTable: Map<String, UUID>): GrammarInput {
-            val input = oiginalInput
+        fun fromString(originalInput: String, translationTable: Map<String, UUID>): GrammarInput {
+            val input = originalInput
                 .replace("<", "")
                 .replace(">", "")
             val action = input.split("(").first()

@@ -57,6 +57,13 @@ object ExperimentMain {
                         .apply { fuzzAllSeeds() }
                     exitProcess(0)
                 }
+                args.contains("loc") -> {
+                    val extractorArgs = args.filterNot { it.contains("loc") }.toTypedArray()
+                    val grammar = GrammarExtractor.extract(extractorArgs, true)
+                    Fuzzer(grammar, extractorArgs)
+                        .apply { fuzzRandomSymbolsGrammar() }
+                    exitProcess(0)
+                }
                 args.contains("explore") -> {
                     DefaultExploration.explore(
                         args

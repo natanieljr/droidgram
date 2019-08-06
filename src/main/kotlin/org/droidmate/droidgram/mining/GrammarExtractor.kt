@@ -5,8 +5,6 @@ import org.droidmate.deviceInterface.exploration.LaunchApp
 import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.deviceInterface.exploration.isPressBack
-import org.droidmate.droidgram.fuzzer.CodeTerminalGuidedFuzzer
-import org.droidmate.droidgram.fuzzer.toCoverageGrammar
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Symbol
 import org.slf4j.Logger
@@ -19,7 +17,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.BiPredicate
-import kotlin.random.Random
 import kotlin.streams.toList
 
 class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Path?) {
@@ -336,90 +333,8 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         }
 
         @JvmStatic
-        private fun fuzz(grammar: Grammar, seed: Int, coverageGrammar: Boolean): List<List<Symbol>> {
-            val grammarMap = if (coverageGrammar) {
-                grammar.extractedGrammar.toCoverageGrammar()
-            } else {
-                grammar.extractedGrammar
-            }
-
-            val generator = CodeTerminalGuidedFuzzer(
-                Grammar(initialGrammar = grammarMap),
-                random = Random(seed),
-                printLog = false
-            )
-            val result = mutableListOf<List<Symbol>>()
-
-            var count = 0
-            while (generator.nonCoveredSymbols.isNotEmpty()) {
-
-                val nonCoveredSymbolsBeforeRun = generator.nonCoveredSymbols
-                val input = generator.fuzz()
-
-                val newlyCovered = nonCoveredSymbolsBeforeRun - generator.nonCoveredSymbols
-                println("Covered: $newlyCovered")
-                println("Missing: ${generator.nonCoveredSymbols}")
-
-                if (generator.nonCoveredSymbols.isNotEmpty() && newlyCovered.isEmpty()) {
-                    log.error("No new terminals were covered in this run. " +
-                            "Original: $nonCoveredSymbolsBeforeRun. Actual: ${generator.nonCoveredSymbols}")
-
-                    count++
-
-                    if (count >= 2) {
-                        break
-                    }
-                } else {
-                    count = 0
-                }
-
-                result.add(input)
-            }
-
-            if (generator.nonCoveredSymbols.isNotEmpty()) {
-                log.error("Could not cover ${generator.nonCoveredSymbols.size} symbol (${
-                generator.nonCoveredSymbols.size / grammar.definedTerminals().size.toLong()}%)")
-            }
-
-            return result
-        }
-
-        @JvmStatic
-        private fun generateSeed(grammar: Grammar, seed: Int, useCoverage: Boolean, outputDir: Path) {
-            val inputs = fuzz(grammar, seed, useCoverage)
-
-            val sb = StringBuilder()
-            inputs.forEach { input ->
-                sb.appendln(input
-                    .filter { it.value.contains("(") }
-                    .joinToString(" ") { it.value })
-            }
-
-            val outputFile = if (useCoverage) {
-                outputDir.resolve("coverageInputs${seed.toString().padStart(2, '0')}.txt")
-            } else {
-                outputDir.resolve("inputs${seed.toString().padStart(2, '0')}.txt")
-            }
-
-            Files.write(outputFile, sb.toString().toByteArray())
-        }
-
-        fun fuzzGrammar(args: Array<String>, grammar: Grammar) {
-            val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
-                .toAbsolutePath()
-            val numSeeds = args.getOrNull(2)?.toInt() ?: 11
-            val useCoverage = args.getOrNull(3)?.toBoolean() ?: false
-
-            for (seed in 0..numSeeds) {
-                generateSeed(grammar, seed, useCoverage, outputDir)
-            }
-        }
-
-        @JvmStatic
         fun main(args: Array<String>) {
-            val grammar = extract(args)
-
-            fuzzGrammar(args, grammar)
+            extract(args)
         }
     }
 }

@@ -6,7 +6,7 @@ import org.droidmate.droidgram.grammar.Symbol
 import java.util.LinkedList
 import kotlin.random.Random
 
-abstract class GrammarFuzzer(
+abstract class BaseGrammarFuzzer(
     protected val grammar: Grammar,
     protected val random: Random,
     protected val printLog: Boolean

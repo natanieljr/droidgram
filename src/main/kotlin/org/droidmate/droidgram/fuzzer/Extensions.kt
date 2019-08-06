@@ -2,8 +2,9 @@ package org.droidmate.droidgram.fuzzer
 
 import org.droidmate.droidgram.grammar.Grammar
 import org.droidmate.droidgram.grammar.Production
+import org.droidmate.droidgram.grammar.Symbol
 
-fun Map<Production, Set<Production>>.toCoverageGrammar(): Map<Production, Set<Production>> {
+fun Map<Production, Set<Production>>.toCoverageGrammar(symbol: Symbol? = null): Map<Production, Set<Production>> {
     val newGrammar: MutableMap<Production, MutableSet<Production>> = mutableMapOf()
 
     this.forEach { (key, productions) ->
@@ -12,8 +13,15 @@ fun Map<Production, Set<Production>>.toCoverageGrammar(): Map<Production, Set<Pr
             val newProduction = if (production.isEmpty()) {
                 Production.empty
             } else {
+                val coverage = if (symbol != null) {
+                    production.coverage
+                        .filter { it == symbol }
+                        .toSet()
+                } else {
+                    production.coverage
+                }
                 Production(
-                    (production.coverage + production.nonTerminals).toList(),
+                    (coverage + production.nonTerminals).toList(),
                     emptySet()
                 )
             }

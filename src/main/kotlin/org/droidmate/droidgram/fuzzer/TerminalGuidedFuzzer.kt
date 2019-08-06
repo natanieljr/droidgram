@@ -11,7 +11,7 @@ open class TerminalGuidedFuzzer(
     printLog: Boolean = false
 ) : CoverageGuidedFuzzer(grammar, random, printLog) {
 
-    val nonCoveredSymbols
+    override val nonCoveredSymbols
         get() = grammar.definedTerminals()
             .filterNot { it in coveredSymbols }
             .toSet()

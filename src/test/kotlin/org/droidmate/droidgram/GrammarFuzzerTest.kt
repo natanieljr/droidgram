@@ -37,7 +37,7 @@ class GrammarFuzzerTest {
         inputList.add(
             guidedFuzz(
                 generator,
-                "[The Joy of , Fuzzing, :, Principles, Techniques and Tools,  for, Robustness, and, Robustness]"
+                "[The Joy of , Fuzzing, :, Tools and Techniques for , Principles, Techniques and Tools]"
             )
         )
 
@@ -60,11 +60,16 @@ class GrammarFuzzerTest {
         inputList.add(
             guidedFuzz(
                 generator,
-                "[http, ://, fuzzingbook.com, /, ?, abc, =, x, 3, 0, &, x, 7, 6, =, 8]"
+                "[http, ://, fuzzingbook.com, /, ?, abc, =, def, &, x, 6, 3, =, x, 0, 7]"
             )
         )
 
-        inputList.add(guidedFuzz(generator, "[ftps, ://, www.google.com, :, 8080, /<id>, ?, x, 2, 9, =, def]"))
+        inputList.add(
+            guidedFuzz(
+                generator,
+                "[ftps, ://, user:password, @, www.google.com, :, 80, /<id>, ?, x, 2, 8, =, x, 9, 7]"
+            )
+        )
 
         while (generator.nonCoveredSymbols.isNotEmpty()) {
             inputList.add(guidedFuzz(generator, ""))

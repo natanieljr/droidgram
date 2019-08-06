@@ -10,6 +10,11 @@ open class NonTerminalGuidedFuzzer(
     random: Random = Random(0),
     printLog: Boolean = false
 ) : CoverageGuidedFuzzer(grammar, random, printLog) {
+    override val nonCoveredSymbols
+        get() = grammar.definedNonTerminals()
+            .filterNot { it in coveredSymbols }
+            .toSet()
+
     override fun onExpanded(node: Node, newNodes: List<Node>) {
         val nonTerminals = newNodes
             .filter { it.isNonTerminal() }

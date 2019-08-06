@@ -88,7 +88,7 @@ open class Production(
     }
 
     override fun toString(): String {
-        return values.joinToString("")
+        return values.joinToString(" ")
     }
 
     override fun compareTo(other: Production): Int {

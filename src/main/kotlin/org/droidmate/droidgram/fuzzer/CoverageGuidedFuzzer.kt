@@ -13,6 +13,8 @@ abstract class CoverageGuidedFuzzer(
 ) : BaseGrammarFuzzer(grammar, random, printLog) {
     protected val coveredSymbols: MutableSet<Symbol> = mutableSetOf()
 
+    abstract val nonCoveredSymbols: Set<Symbol>
+
     private fun Production.getCoverage(): Set<Symbol> {
         return this.uncoveredSymbols()
             .toMutableSet()
@@ -94,39 +96,38 @@ abstract class CoverageGuidedFuzzer(
             if (lastDepth > maxDepth) {
                 break
                 // While in the same depth, calculate and add to list
-            } else if (searchData.currentDepth == lastDepth) {
+            } else if (searchData.currentDepth != lastDepth &&
+                currentDepthMap.any { it.value.any { p -> p.value.isNotEmpty() } }) {
+                break
+            } else {
+                if (searchData.currentDepth != lastDepth) {
+                    debug("Seeking new productions with depth $lastDepth")
+                }
+
                 val possibleExpansions = searchData.currentExpansion.getExpansionCoverage()
                 currentDepthMap[searchData] = possibleExpansions
 
-                val newSearch = possibleExpansions.map {
-                    grammar.key(it.key).map { expansionKey ->
-                        SearchData(
-                            searchData.node,
-                            searchData.baseExpansion,
-                            expansionKey,
-                            searchData.currentDepth + 1
-                        )
-                    }
-                }.flatten()
-                    .filterNot { it.currentExpansion in seenElements }
+                val newSearch = possibleExpansions
+                    .map {
+                        grammar.key(it.key)
+                            .map { expansionKey ->
+                                SearchData(
+                                    searchData.node,
+                                    searchData.baseExpansion,
+                                    expansionKey,
+                                    searchData.currentDepth + 1
+                                )
+                            }
+                    }.flatten()
 
-                seenElements.addAll(newSearch.map { it.currentExpansion })
+                val filteredSearch = newSearch.filterNot {
+                    it.currentExpansion in seenElements }
+                seenElements.addAll(filteredSearch.map {
+                    it.currentExpansion }
+                )
 
-                queue.addAll(newSearch)
+                queue.addAll(filteredSearch)
                 // Changed depth, check if any production leads to new coverage
-            } else {
-                // If has new coverage, stop and select from those
-                if (currentDepthMap.any { it.value.any { p -> p.value.isNotEmpty() } }) {
-                    break
-                    // Otherwise clear caches and add current item
-                } else {
-                    currentDepthMap.clear()
-                    val possibleExpansions = searchData.currentExpansion.getExpansionCoverage()
-                    currentDepthMap[searchData] = possibleExpansions
-
-                    lastDepth = searchData.currentDepth
-                    debug("Seeking new productions with depth $lastDepth")
-                }
             }
         }
 

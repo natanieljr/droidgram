@@ -3,6 +3,7 @@ package org.droidmate.droidgram
 import com.natpryce.konfig.CommandLineOption
 import kotlinx.coroutines.runBlocking
 import org.droidmate.api.ExplorationAPI
+import org.droidmate.droidgram.fuzzer.Fuzzer
 import org.droidmate.droidgram.runner.GrammarExploration
 import org.droidmate.droidgram.runner.DefaultExploration
 import org.droidmate.droidgram.mining.GrammarExtractor
@@ -52,7 +53,8 @@ object ExperimentMain {
                 args.contains("extract") -> {
                     val extractorArgs = args.filterNot { it.contains("extract") }.toTypedArray()
                     val grammar = GrammarExtractor.extract(extractorArgs)
-                    GrammarExtractor.fuzzGrammar(extractorArgs, grammar)
+                    Fuzzer(grammar, extractorArgs)
+                        .apply { fuzzAllSeeds() }
                     exitProcess(0)
                 }
                 args.contains("explore") -> {

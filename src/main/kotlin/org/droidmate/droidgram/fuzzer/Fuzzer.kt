@@ -159,20 +159,20 @@ class Fuzzer(
     }
 
     fun fuzzRandomSymbolsGrammar() {
-        val symbols = getTargetLOC(0.95, 0.05)
+        val symbols = getTargetLOC(0.9, 0.1)
 
         symbols.forEachIndexed { index, symbol ->
             for (seed in 0..numSeeds) {
                 val outputFile = outputDir
                     .resolve("symbol_${index.padStart(3)}")
-                    .resolve("symbolInputs${index.padStart(3)}.txt")
+                    .resolve("symbolInputs${seed.padStart(3)}.txt")
 
                 if (Files.notExists(outputFile.parent)) {
                     Files.createDirectories(outputFile.parent)
                 }
 
                 val symbolGrammar = grammar.extractedGrammar.toCoverageGrammar(symbol)
-                log.info("Generating input $seed for symbol $symbol ($index)")
+                log.info("Generating input $seed/$numSeeds for symbol $symbol ($index/${symbols.size})")
                 generateSeed(seed, outputFile) { _, _ ->
                     SymbolGuidedFuzzer(
                         Grammar(initialGrammar = symbolGrammar),

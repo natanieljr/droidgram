@@ -6,6 +6,7 @@ import org.droidmate.deviceInterface.exploration.TextInsert
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.deviceInterface.exploration.isPressBack
 import org.droidmate.droidgram.grammar.Grammar
+import org.droidmate.droidgram.grammar.MinedGrammar
 import org.droidmate.droidgram.grammar.Symbol
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -21,7 +22,7 @@ import kotlin.streams.toList
 
 class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Path?) {
     private val mIdMapping = mutableMapOf<String, String>()
-    private val mGrammar = Grammar()
+    private val mGrammar = MinedGrammar()
     private val mStatesDir = mModelDir.resolve("states")
     private var mIsInitialized = false
 
@@ -233,26 +234,13 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             }
         }
 
-        postProcessGrammar()
+        mGrammar.cleanUp(mCoverageDir == null)
 
         check(mGrammar.isValid()) {
             "Grammar is invalid"
         }
 
         return mGrammar
-    }
-
-    /**
-     * Postprocessing includes: removing duplicate productions, removing terminate state
-     */
-    private fun postProcessGrammar() {
-        mGrammar.removeNonExistingStates()
-        mGrammar.removeTerminateActions()
-        if (mCoverageDir == null) {
-            mGrammar.removeSingleStateTransitions()
-            mGrammar.mergeEquivalentTransitions()
-        }
-        mGrammar.removeUnusedSymbols()
     }
 
     val grammar by lazy {

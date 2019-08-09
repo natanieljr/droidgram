@@ -27,7 +27,7 @@ class ExtractAndFuzzTest {
     @Test
     fun fuzzExtractedGrammar() {
         val grammar = extractGrammar()
-        val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammar.extractedGrammar), printLog = false)
+        val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammar.asMap()), printLog = false)
 
         val inputList = mutableListOf<List<Symbol>>()
 
@@ -63,7 +63,7 @@ class ExtractAndFuzzTest {
 
     @Test
     fun fuzzExtractedCodeGrammarTerminalFuzzer() {
-        val grammar = extractGrammar().extractedGrammar.toCoverageGrammar()
+        val grammar = extractGrammar().asMap().toCoverageGrammar()
         val generator = TerminalGuidedFuzzer(Grammar(initialGrammar = grammar), printLog = false)
 
         val inputList = mutableListOf<List<Symbol>>()
@@ -79,7 +79,7 @@ class ExtractAndFuzzTest {
 
     @Test
     fun fuzzExtractedCodeGrammarCodeFuzzer() {
-        val grammar = extractGrammar().extractedGrammar.toCoverageGrammar()
+        val grammar = extractGrammar().asMap().toCoverageGrammar()
         val generator = CodeTerminalGuidedFuzzer(Grammar(initialGrammar = grammar), printLog = false)
 
         val inputList = mutableListOf<List<Symbol>>()

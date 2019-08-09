@@ -5,7 +5,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.LinkedList
 
-class Grammar @JvmOverloads constructor(
+open class Grammar @JvmOverloads constructor(
     initialGrammar: Map<Production, Set<Production>> =
         mapOf(
             Production.epsilon to setOf(Production.empty),
@@ -14,39 +14,40 @@ class Grammar @JvmOverloads constructor(
 ) {
     companion object {
         @JvmStatic
-        private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
+        protected val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
     }
 
     operator fun get(key: Production): Set<Production> {
-        return grammar[key].orEmpty()
+        return productionSet[key].orEmpty()
     }
 
     operator fun get(key: Symbol): Set<Production> {
-        return grammar.get(key)
+        return productionSet.get(key)
     }
 
-    val extractedGrammar: Map<Production, Set<Production>>
-        get() = grammar.toMap()
+    fun asMap(): Map<Production, Set<Production>> {
+        return productionSet.toMap()
+    }
 
-    private val grammar: MutableMap<Production, MutableSet<Production>> by lazy {
+    protected open val productionSet: MutableMap<Production, MutableSet<Production>> by lazy {
         initialGrammar
             .map { Pair(it.key, it.value.toMutableSet()) }
             .toMap()
             .toMutableMap()
     }
 
-    private fun remove(symbol: Symbol) {
-        grammar.remove(Production(symbol))
+    protected open fun remove(symbol: Symbol) {
+        productionSet.remove(Production(symbol))
     }
 
-    fun key(production: Production): Set<Production> {
+    open fun key(production: Production): Set<Production> {
         val keys = mutableSetOf<Production>()
 
         for (symbol in production.values) {
             val key = Production(symbol)
 
             if (symbol.isNonTerminal()) {
-                check(grammar.keys.any { it == key })
+                check(productionSet.keys.any { it == key })
             }
 
             keys.add(key)
@@ -55,147 +56,16 @@ class Grammar @JvmOverloads constructor(
         return keys
     }
 
-    private fun Map<Production, Set<Production>>.containsKey(symbol: Symbol): Boolean {
+    protected fun Map<Production, Set<Production>>.containsKey(symbol: Symbol): Boolean {
         val key = Production(symbol)
         return this.keys.any { it == key }
     }
 
-    fun Map<Production, Set<Production>>.get(key: Symbol): Set<Production> {
+    private fun Map<Production, Set<Production>>.get(key: Symbol): Set<Production> {
         val symbol = Production(key)
         return this.entries
             .first { it.key == symbol }
             .value
-    }
-
-    fun removeTerminateActions() {
-        val terminateActions = grammar.keys
-            .filter { it.isTerminate() }
-            .map {
-                check(it.nonTerminals.size == 1) {
-                    "Can only remove a production with a single non terminal"
-                }
-
-                it.nonTerminals.first()
-            }
-
-        terminateActions.forEach { terminateProduction ->
-            grammar.replaceAll { _, value ->
-                value.map {
-                    it.replaceByEpsilon(terminateProduction)
-                }.toMutableSet()
-            }
-
-            remove(terminateProduction)
-        }
-    }
-
-    private fun removeEmptyStateTransitions() {
-        val singleState = grammar.entries
-            .filter { it.key.isAction() }
-            .filter { it.value.isEmpty() }
-            .map { it.key }
-            .map {
-                check(it.nonTerminals.size == 1) {
-                    "Can only remove a production with a single non terminal"
-                }
-
-                it.nonTerminals.first()
-            }
-
-        singleState.forEach { oldValue ->
-            grammar.replaceAll { _, v ->
-                v.map { it.replaceByEpsilon(oldValue) }.toMutableSet()
-            }
-
-            remove(oldValue)
-        }
-    }
-
-    fun removeSingleStateTransitions() {
-        val singleState = grammar.entries
-            .filterNot { it.key.isState() }
-            .filterNot { it.key.isEpsilon() || it.key.isStart() }
-            .filter { it.value.size == 1 && it.value.any { p -> !p.isEpsilon() } }
-
-        singleState.forEach { entry ->
-            val oldValue = entry.key.nonTerminals.first()
-            val newValue = entry.value.first { !it.isEpsilon() }.values.first()
-
-            grammar.replaceAll { _, v ->
-                v.map {
-                    it.replace(oldValue, newValue)
-                }.toMutableSet()
-            }
-            remove(oldValue)
-        }
-    }
-
-    fun removeUnusedSymbols() {
-        val originalGrammarSize = grammar.size
-
-        val unusedKeys = grammar.keys
-            .filterNot { key ->
-                grammar.values.any { value ->
-                    value.any { key.values.first() in it.nonTerminals }
-                }
-            }
-            .filterNot { it.isStart() }
-
-        unusedKeys.forEach { entry ->
-            grammar.remove(entry)
-        }
-
-        if (grammar.size != originalGrammarSize) {
-            this.removeUnusedSymbols()
-        }
-    }
-
-    /**
-     * When an action points to a state an the next action is a reset.
-     * The transition state is not created
-     */
-    fun removeNonExistingStates() {
-        val nonExistingState = grammar.entries
-            .flatMap {
-                it.value.flatMap { p ->
-                    p.nonTerminals.map { q ->
-                        Pair(it.key, q)
-                    }
-                }
-            }
-            .filter { !grammar.containsKey(it.second) }
-
-        nonExistingState.forEach { entry ->
-            val key = entry.first
-            val illegalState = entry.second
-
-            val newValue = grammar.getValue(key)
-                .map { it.replace(illegalState, Symbol.empty) }
-                .filter { it.hasValue() }
-                .toMutableSet()
-            grammar.replace(key, newValue)
-        }
-
-        // After removing states, some resulting states may be empty
-        removeEmptyStateTransitions()
-    }
-
-    fun mergeEquivalentTransitions() {
-        val duplicates = grammar.entries
-            .groupBy { it.value }
-            .filter { it.value.size > 1 }
-            .map { it.value.map { p -> p.key.values.first() } }
-
-        duplicates.forEach { keys ->
-            val target = keys.first()
-
-            keys.drop(1).forEach { oldKey ->
-                grammar.replaceAll { _, v ->
-                    v.map { it.replace(oldKey, target) }.toMutableSet()
-                }
-                remove(oldKey)
-            }
-        }
     }
 
     fun addRule(name: String, item: Symbol, coverage: Set<Long>) {
@@ -210,7 +80,7 @@ class Grammar @JvmOverloads constructor(
         addRule(name, arrayOf(item), coverage)
     }
 
-    fun addRule(name: String, item: Array<String>, coverage: Set<Long>) {
+    open fun addRule(name: String, item: Array<String>, coverage: Set<Long>) {
         val key = Production(name)
         val coverageSymbol = coverage
             .map { Symbol(it.toString()) }
@@ -228,13 +98,13 @@ class Grammar @JvmOverloads constructor(
             mutableSetOf(Production.epsilon)
         }
 
-        if (!grammar.containsKey(key.values.first())) {
-            grammar[key] = emptySet
+        if (!productionSet.containsKey(key.values.first())) {
+            productionSet[key] = emptySet
         }
 
-        val existingKey = grammar.keys.first { it == key }
+        val existingKey = productionSet.keys.first { it == key }
 
-        val values = grammar[existingKey].orEmpty()
+        val values = productionSet[existingKey].orEmpty()
 
         // There's a bug in Kotlin
         // If we do value in values, it returns false due to different overrides of equals method
@@ -250,14 +120,14 @@ class Grammar @JvmOverloads constructor(
                 .toMutableSet()
                 .also { it.add(newValue) }
 
-            grammar.replace(existingKey, values.toMutableSet(), newValues)
+            productionSet.replace(existingKey, values.toMutableSet(), newValues)
         } else {
-            grammar[existingKey]?.add(value)
+            productionSet[existingKey]?.add(value)
         }
     }
 
-    private fun grammarMap(useCoverage: Boolean): Map<String, Set<String>> {
-        return grammar
+    protected open fun dump(useCoverage: Boolean): Map<String, Set<String>> {
+        return productionSet
             .entries
             .sortedBy { it.key }
             .map { entry ->
@@ -268,14 +138,14 @@ class Grammar @JvmOverloads constructor(
             }.toMap()
     }
 
-    fun asJsonStr(useCoverage: Boolean): String {
+    open fun asJsonStr(useCoverage: Boolean): String {
         val gSon = GsonBuilder().setPrettyPrinting().create()
-        val entries = grammarMap(useCoverage)
+        val entries = dump(useCoverage)
         return gSon.toJson(entries)
     }
 
-    fun asString(useCoverage: Boolean): String {
-        return grammarMap(useCoverage)
+    open fun asString(useCoverage: Boolean): String {
+        return dump(useCoverage)
             .map { entry ->
                 val key = entry.key
                 val value = entry.value
@@ -283,7 +153,7 @@ class Grammar @JvmOverloads constructor(
             }.joinToString("\n")
     }
 
-    private fun reachableNonTerminals(): Set<Symbol> {
+    protected open fun reachableNonTerminals(): Set<Symbol> {
         val reachable = mutableSetOf<Symbol>()
 
         val queue = LinkedList<Symbol>()
@@ -293,7 +163,7 @@ class Grammar @JvmOverloads constructor(
             val symbol = queue.pop()
 
             if (symbol !in reachable) {
-                val newSymbols = grammar.get(symbol)
+                val newSymbols = productionSet.get(symbol)
                     .flatMap { value ->
                         val nonTerminals = value.nonTerminals
                             .filterNot { reachable.contains(it) }
@@ -309,29 +179,29 @@ class Grammar @JvmOverloads constructor(
         return reachable
     }
 
-    private fun unreachableNonTerminals(): Set<Symbol> {
+    protected open fun unreachableNonTerminals(): Set<Symbol> {
         val reachableNonTerminals = reachableNonTerminals()
 
-        return grammar.keys
+        return productionSet.keys
             .map { it.values.first() }
             .filterNot { it in reachableNonTerminals }
             .toSet()
     }
 
-    fun definedNonTerminals(): Set<Symbol> =
-        grammar.keys
+    open fun definedNonTerminals(): Set<Symbol> =
+        productionSet.keys
             .flatMap { it.values }
             .toSet()
 
-    fun definedTerminals(): Set<Symbol> =
-        grammar.values
+    open fun definedTerminals(): Set<Symbol> =
+        productionSet.values
             .flatMap { it.flatMap { production -> production.terminals } }
             .filter { it.isTerminal() }
             .toSet()
 
-    private fun usedNonTerminals(): Set<Symbol> {
-        return grammar.keys.flatMap { definedNonTerminal ->
-            val expansions = grammar[definedNonTerminal]
+    protected open fun usedNonTerminals(): Set<Symbol> {
+        return productionSet.keys.flatMap { definedNonTerminal ->
+            val expansions = productionSet[definedNonTerminal]
 
             if (expansions.isNullOrEmpty()) {
                 log.error("Non-terminal $definedNonTerminal: expansion list empty")
@@ -341,9 +211,9 @@ class Grammar @JvmOverloads constructor(
         }.toSet()
     }
 
-    fun isValid(): Boolean {
+    open fun isValid(): Boolean {
         // All keys should be a single non terminal
-        val multiSymbolKeys = grammar.keys.filterNot { it.values.size == 1 }
+        val multiSymbolKeys = productionSet.keys.filterNot { it.values.size == 1 }
         if (multiSymbolKeys.isNotEmpty()) {
             multiSymbolKeys.forEach {
                 log.error("Key $it contains more than 1 symbol")
@@ -351,7 +221,7 @@ class Grammar @JvmOverloads constructor(
             return false
         }
 
-        val terminalKeys = grammar.keys
+        val terminalKeys = productionSet.keys
             .filter { it.terminals.isNotEmpty() }
         if (terminalKeys.isNotEmpty()) {
             terminalKeys.forEach {
@@ -405,7 +275,7 @@ class Grammar @JvmOverloads constructor(
         return true
     }
 
-    fun getRoot(): Symbol {
+    open fun getRoot(): Symbol {
         return Symbol.start
     }
 }

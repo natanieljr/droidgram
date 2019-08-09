@@ -40,9 +40,9 @@ class Fuzzer(
         fuzzerProducer: (Map<Production, Set<Production>>, Int) -> CoverageGuidedFuzzer
     ): List<List<Symbol>> {
         val grammarMap = if (useCoverage) {
-            grammar.extractedGrammar.toCoverageGrammar()
+            grammar.asMap().toCoverageGrammar()
         } else {
-            grammar.extractedGrammar
+            grammar.asMap()
         }
 
         val generator = fuzzerProducer(grammarMap, seed)
@@ -159,7 +159,7 @@ class Fuzzer(
     }
 
     private fun getTargetLOC(confidence: Double, error: Double): List<Symbol> {
-        val coverageGrammar = Grammar(initialGrammar = grammar.extractedGrammar.toCoverageGrammar())
+        val coverageGrammar = Grammar(initialGrammar = grammar.asMap().toCoverageGrammar())
         val terminals = coverageGrammar.definedTerminals()
         val populationSize = terminals.size
         val sampleSize = sampleSize(populationSize, confidence, error)
@@ -173,7 +173,7 @@ class Fuzzer(
         val symbols = getTargetLOC(0.9, 0.1)
 
         val symbolsGrammar = symbols.map { symbol ->
-            Pair(symbol, grammar.extractedGrammar.toCoverageGrammar(symbol))
+            Pair(symbol, grammar.asMap().toCoverageGrammar(symbol))
         }.toMap()
 
         Files.write(outputDir.resolve("targetSymbols.txt"),

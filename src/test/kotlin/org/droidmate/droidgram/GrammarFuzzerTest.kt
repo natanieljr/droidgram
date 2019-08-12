@@ -60,14 +60,14 @@ class GrammarFuzzerTest {
         inputList.add(
             guidedFuzz(
                 generator,
-                "[http, ://, fuzzingbook.com, /, ?, abc, =, def, &, x, 6, 3, =, x, 0, 7]"
+                "[http, ://, fuzzingbook.com, /, ?, abc, =, def, &, x, 3, 2, =, x, 7, 8]"
             )
         )
 
         inputList.add(
             guidedFuzz(
                 generator,
-                "[ftps, ://, user:password, @, www.google.com, :, 80, /<id>, ?, x, 2, 8, =, x, 9, 7]"
+                "[ftps, ://, user:password, @, www.google.com, :, 8080, /<id>, ?, x, 6, 6, =, x, 9, 0]"
             )
         )
 

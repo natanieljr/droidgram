@@ -34,5 +34,11 @@ fun Map<Production, Set<Production>>.toCoverageGrammar(symbol: Symbol? = null): 
         "Generated coverage grammar is invalid"
     }
 
+    if (symbol != null) {
+        check(newGrammarCheck.reachableTerminals().contains(symbol)) {
+            "Target symbol not found in the grammar"
+        }
+    }
+
     return newGrammar
 }

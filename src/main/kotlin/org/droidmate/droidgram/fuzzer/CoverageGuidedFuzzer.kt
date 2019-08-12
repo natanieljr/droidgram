@@ -85,6 +85,11 @@ abstract class CoverageGuidedFuzzer(
             return Pair(singleElement.node, singleElement.baseExpansion)
         }
 
+        // If everything has been done
+        if (nonCoveredSymbols.isEmpty()) {
+            return nodes.epsilonOrRandom()
+        }
+
         var lastDepth = initialDepth
         val currentDepthMap = mutableMapOf<SearchData, Map<Production, Set<Symbol>>>()
 
@@ -102,6 +107,7 @@ abstract class CoverageGuidedFuzzer(
             } else {
                 if (searchData.currentDepth != lastDepth) {
                     debug("Seeking new productions with depth $lastDepth")
+                    lastDepth = searchData.currentDepth
                 }
 
                 val possibleExpansions = searchData.currentExpansion.getExpansionCoverage()

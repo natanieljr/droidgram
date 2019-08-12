@@ -153,7 +153,7 @@ open class Grammar @JvmOverloads constructor(
             }.joinToString("\n")
     }
 
-    protected open fun reachableNonTerminals(): Set<Symbol> {
+    open fun reachableNonTerminals(): Set<Symbol> {
         val reachable = mutableSetOf<Symbol>()
 
         val queue = LinkedList<Symbol>()
@@ -193,6 +193,40 @@ open class Grammar @JvmOverloads constructor(
             .flatMap { it.values }
             .toSet()
 
+    open fun reachableTerminals(): Set<Symbol> {
+        val processed = mutableSetOf<Symbol>()
+        val reachable = mutableSetOf<Symbol>()
+
+        val queue = LinkedList<Symbol>()
+        queue.add(Symbol.start)
+
+        while (queue.isNotEmpty()) {
+            val symbol = queue.pop()
+
+            if (symbol !in reachable) {
+                if (productionSet.containsKey(symbol)) {
+                    val newSymbols = productionSet.get(symbol)
+                        .flatMap { value ->
+                            val nonTerminals = value.nonTerminals
+                                .filterNot { processed.contains(it) }
+
+                            nonTerminals
+                        }
+
+                    val terminals = productionSet.get(symbol)
+                        .flatMap { value -> value.terminals }
+
+                    queue.addAll(newSymbols)
+                    reachable.addAll(terminals)
+
+                    processed.add(symbol)
+                }
+            }
+        }
+
+        return reachable
+    }
+
     open fun definedTerminals(): Set<Symbol> =
         productionSet.values
             .flatMap { it.flatMap { production -> production.terminals } }
@@ -230,12 +264,25 @@ open class Grammar @JvmOverloads constructor(
             return false
         }
 
+        val definedTerminals = definedTerminals().sorted()
+        val reachableTerminals = reachableTerminals().sorted()
+        val unreachableTerminals = definedTerminals
+            .filterNot { reachableTerminals.contains(it) }
+
+        if (unreachableTerminals.isNotEmpty()) {
+            unreachableTerminals.forEach {
+                log.error("$it is not reachable")
+                return false
+            }
+        }
+
         val definedNonTerminals = definedNonTerminals()
         val usedNonTerminals = usedNonTerminals().toMutableSet()
 
         // It must have terms and all terms must have a value
-        if (definedNonTerminals.isEmpty() || usedNonTerminals.isEmpty())
+        if (definedNonTerminals.isEmpty() || usedNonTerminals.isEmpty()) {
             return false
+        }
 
         // Do not complain about '<start>' being not used, even if [startSymbol] is different
         usedNonTerminals.add(Symbol.start)

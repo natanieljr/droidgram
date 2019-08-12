@@ -2,7 +2,7 @@ package org.droidmate.droidgram.grammar
 
 data class Symbol(val value: String) : Comparable<Symbol> {
     override fun compareTo(other: Symbol): Int {
-        return this.compareTo(other)
+        return value.compareTo(other.value)
     }
 
     companion object {

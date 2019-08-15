@@ -16,7 +16,7 @@ class FileRename {
         @Suppress("unused")
         private fun moveInputFiles(appDir: Path, index: String) {
             val inputDir = appDir
-                .resolve("input_rq2")
+                .resolve("input_rq3")
                 .resolve("apks")
 
             if (!Files.exists(inputDir)) {
@@ -70,9 +70,8 @@ class FileRename {
         @Suppress("unused")
         private fun moveOutputFiles(appDir: Path, index: String) {
             val outputDir = appDir
-                .resolve("output_rq2")
+                .resolve("output_rq3")
 
-            /*
             if (!Files.exists(outputDir)) {
                 return
             }
@@ -99,7 +98,6 @@ class FileRename {
 
                 seedDir.moveTo(newSeedDir)
             }
-            */
 
             // Summary File
             val summaryFile = outputDir.resolve("summary.txt")
@@ -155,15 +153,15 @@ class FileRename {
         @Suppress("unused")
         private fun moveToTargetDir(appDir: Path, targetDir: Path, index: String) {
             val appDirApks = appDir.resolve("apks")
-            val appDirInput = appDir.resolve("input_rq2").resolve("apks")
-            val appDirOutput = appDir.resolve("output_rq2")
+            val appDirInput = appDir.resolve("input_rq3").resolve("apks")
+            val appDirOutput = appDir.resolve("output_rq3")
 
             val appName = appDir.fileName.toString()
             val appDirTarget = targetDir.resolve(appName)
 
             val appDirTargetApks = appDirTarget.resolve("apks")
             val appDirTargetInput = appDirTarget.resolve("input")
-            val appDirTargetOutput = appDirTarget.resolve("rq2")
+            val appDirTargetOutput = appDirTarget.resolve("rq3")
 
             Files.createDirectories(appDirTargetApks)
             Files.createDirectories(appDirTargetInput)
@@ -173,43 +171,50 @@ class FileRename {
                 return
             }
 
-            /*
-            Files.list(appDirInput)
-                .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
-                .forEach { inputFile ->
-                    val fileName = inputFile.fileName.toString()
-                    val newInputFile = appDirTargetInput.resolve(fileName)
-                    inputFile.moveTo(newInputFile)
-                }
-            */
+            if (Files.exists(appDirInput)) {
+                Files.list(appDirInput)
+                    .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
+                    .forEach { inputFile ->
+                        val fileName = inputFile.fileName.toString()
+                        var newInputFile = appDirTargetInput.resolve(fileName)
 
-            /*
-            Files.list(appDirOutput)
-                .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
-                .forEach { outputFile ->
-                    val fileName = outputFile.fileName.toString()
-                    var newOutputFile = appDirTargetOutput.resolve(fileName)
+                        if (Files.exists(newInputFile)) {
+                            newInputFile = newInputFile.resolveSibling("${fileName}_$index")
+                        }
 
-                    if (Files.exists(newOutputFile)) {
-                        newOutputFile = newOutputFile.resolveSibling("${fileName}_$index")
+                        inputFile.moveTo(newInputFile)
                     }
+            }
 
-                    outputFile.moveTo(newOutputFile)
-                }
-             */
+            if (Files.exists(appDirOutput)) {
+                Files.list(appDirOutput)
+                    .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
+                    .forEach { outputFile ->
+                        val fileName = outputFile.fileName.toString()
+                        var newOutputFile = appDirTargetOutput.resolve(fileName)
 
-            Files.list(appDirApks)
-                .filter { Files.isRegularFile(it) }
-                .forEach { apkFile ->
-                    val fileName = apkFile.fileName.toString()
-                    var newApkFile = appDirTargetApks.resolve(fileName)
+                        if (Files.exists(newOutputFile)) {
+                            newOutputFile = newOutputFile.resolveSibling("${fileName}_$index")
+                        }
 
-                    if (Files.exists(newApkFile)) {
-                        newApkFile = newApkFile.resolveSibling("${fileName}_$index")
+                        outputFile.moveTo(newOutputFile)
                     }
+            }
 
-                    apkFile.moveTo(newApkFile)
-                }
+            if (Files.exists(appDirApks)) {
+                Files.list(appDirApks)
+                    .filter { Files.isRegularFile(it) }
+                    .forEach { apkFile ->
+                        val fileName = apkFile.fileName.toString()
+                        var newApkFile = appDirTargetApks.resolve(fileName)
+
+                        if (Files.exists(newApkFile)) {
+                            newApkFile = newApkFile.resolveSibling("${fileName}_$index")
+                        }
+
+                        apkFile.moveTo(newApkFile)
+                    }
+            }
         }
 
         @Suppress("unused")
@@ -222,7 +227,7 @@ class FileRename {
         /*
         @ Suppress("unused")
         private fun remove(appDir: Path, expDir: Path) {
-            if (expDir.fileName.toString().contains("rq2_")) {
+            if (expDir.fileName.toString().contains("rq3_")) {
                 if (Files.exists(appDir.resolve("input"))) {
                     Files.walk(appDir.resolve("input"))
                         .sorted(Comparator.reverseOrder())
@@ -251,7 +256,7 @@ class FileRename {
         @Suppress("unused")
         private fun removeInvalidInputFiles(appDir: Path) {
             val inputDir = appDir
-                .resolve("input_rq2")
+                .resolve("input_rq3")
                 .resolve("apks")
 
             // Input Files
@@ -296,13 +301,17 @@ class FileRename {
             // val dir = Paths.get("/Volumes/Experiments/20-icse-regression-with-grammars/")
             val dir = Paths.get("/Users/nataniel/Downloads/exp/")
 
-            val targetDir = dir.resolve("experiments")
+            // val targetDir = dir.resolve("experiments")
+            val targetDir = dir.resolve("rq_2_3").resolve("renamed")
             val expDirs = listOf(
                 // dir.resolve("experimentsrq1_1"),
                 // dir.resolve("experimentsrq1_2"),
-                dir.resolve("experimentsrq2_1").resolve("experimentsrq2_1"),
-                dir.resolve("experimentsrq2_2").resolve("experimentsrq2_2"),
-                dir.resolve("experimentsrq2_3").resolve("experimentsrq2_3")
+
+                // dir.resolve("experimentsrq2_1").resolve("experimentsrq2_1"),
+                // dir.resolve("experimentsrq2_2").resolve("experimentsrq2_2"),
+                // dir.resolve("experimentsrq2_3").resolve("experimentsrq2_3")
+
+                dir.resolve("rq2_3").resolve("rq3")
             )
 
             expDirs.forEachIndexed { index, expDir ->
@@ -311,7 +320,7 @@ class FileRename {
                     .forEach { appDir ->
                         val indexStr = index.toString().padStart(2, '0')
                         // removeInvalidInputFiles(appDir)
-                        // moveInputFiles(appDir, indexStr)
+                        moveInputFiles(appDir, indexStr)
                         moveOutputFiles(appDir, indexStr)
                         // fixSeedDirName(appDir)
 

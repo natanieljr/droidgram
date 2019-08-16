@@ -7,6 +7,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.streams.toList
+import kotlin.system.exitProcess
 
 class EvalRQ3 {
     companion object {
@@ -217,6 +218,38 @@ org.thosp.yourlocalweather_123""".split("\n")
             }
 
             result.forEach { line -> print(line) }
+
+            getInputSizeRQ3(baseDir)
+        }
+
+        private fun getInputSizeRQ3(baseDir: Path) {
+            val files = Files.walk(baseDir)
+                .filter {
+                    appList.any { p -> it.toString().contains(p) }
+                    !it.fileName.toString().contains("11") &&
+                    it.fileName.toString().startsWith("symbolInputs") &&
+                            it.fileName.toString().endsWith(".txt")
+                }
+                .toList()
+
+            val inputs = files.map {inputFile ->
+                val data = Files.readAllLines(inputFile)
+
+                Pair(data.size,
+                    data.map { line ->
+                        line.split("<").count()
+                    }
+                )
+            }
+
+            val numInputFiles = files.size
+            val numInputs = inputs.map { it.first }.sum()
+            val sizeInputs = inputs.map { it.second.sum() }.sum()
+
+            println("Num input files = $numInputFiles")
+            println("Num inputs (action sets) = $numInputs")
+            println("Total input length (actions) = $sizeInputs")
+            println("Avg input length = ${sizeInputs / numInputs.toFloat()}")
         }
     }
 }

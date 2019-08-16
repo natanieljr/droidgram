@@ -136,10 +136,7 @@ org.thosp.yourlocalweather_123""".split("\n")
             }.joinToString(" ")
         }
 
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val baseDir = Paths.get("/Users/nataniel/Downloads/exp/rq_2_3/renamed/")
-
+        private fun processResult(baseDir: Path) {
             val result = StringBuilder()
             result.append("App")
                 .append("\t")
@@ -218,7 +215,13 @@ org.thosp.yourlocalweather_123""".split("\n")
             }
 
             result.forEach { line -> print(line) }
+        }
 
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val baseDir = Paths.get("/Users/nataniel/Downloads/exp/rq_2_3/renamed/")
+
+            // processResult(baseDir)
             getInputSizeRQ3(baseDir)
         }
 
@@ -227,6 +230,7 @@ org.thosp.yourlocalweather_123""".split("\n")
                 .filter {
                     appList.any { p -> it.toString().contains(p) }
                     !it.fileName.toString().contains("11") &&
+                            !it.fileName.toString().contains("10") &&
                     it.fileName.toString().startsWith("symbolInputs") &&
                             it.fileName.toString().endsWith(".txt")
                 }
@@ -235,9 +239,9 @@ org.thosp.yourlocalweather_123""".split("\n")
             val inputs = files.map {inputFile ->
                 val data = Files.readAllLines(inputFile)
 
-                Pair(data.size,
+                Pair(data.filter { it.isNotEmpty() }.size,
                     data.map { line ->
-                        line.split("<").count()
+                        line.split("<").filter { it.isNotEmpty() }.count()
                     }
                 )
             }
@@ -250,6 +254,8 @@ org.thosp.yourlocalweather_123""".split("\n")
             println("Num inputs (action sets) = $numInputs")
             println("Total input length (actions) = $sizeInputs")
             println("Avg input length = ${sizeInputs / numInputs.toFloat()}")
+
+            println(inputs.joinToString(", ") { it.second.joinToString(", ") { p -> p.toString() }})
         }
     }
 }

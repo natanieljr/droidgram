@@ -3,6 +3,8 @@ package org.droidmate.droidgram.grammar
 import com.google.gson.GsonBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.LinkedList
 
 open class Grammar @JvmOverloads constructor(
@@ -15,6 +17,15 @@ open class Grammar @JvmOverloads constructor(
     companion object {
         @JvmStatic
         protected val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
+
+        fun fromJson(grammarFile: Path): Map<String, List<String>> {
+            val gSon = GsonBuilder().setPrettyPrinting().create()
+
+            val reader = Files.newBufferedReader(grammarFile)
+            val data = gSon.fromJson(reader, Map::class.java) as Map<String, List<String>>
+
+            return data
+        }
     }
 
     operator fun get(key: Production): Set<Production> {

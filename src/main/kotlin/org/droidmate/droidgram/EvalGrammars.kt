@@ -1,7 +1,7 @@
 package org.droidmate.droidgram
 
+import org.droidmate.droidgram.grammar.Grammar
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.streams.toList
 
@@ -56,7 +56,7 @@ org.thosp.yourlocalweather_123""".split("\n")
     @JvmStatic
     fun main(args: Array<String>) {
 
-        val path = Paths.get("/Users/nataniel/Downloads/exp/e/experiments/")
+        val path = Paths.get("/Users/nataniel/Downloads/exp/rq_2_3/renamed/")
 
         val translationTableName = "translationTable.txt".toLowerCase()
 
@@ -77,12 +77,15 @@ org.thosp.yourlocalweather_123""".split("\n")
                 res
             }.toList()
 
-        val result = mutableMapOf<Path, Pair<Int, Int>>()
+        val result = mutableListOf<List<Int>>()
 
         mappings.forEach { m ->
             val grammar = Files.readAllLines(m.resolveSibling("grammar.txt")).joinToString(" ")
-
             val data = Files.readAllLines(m)
+
+            val grammarMap = Grammar.fromJson(m.resolveSibling("grammar.txt"))
+
+            val numProductions = grammarMap.size
             val numStates = data
                 .filter { it.startsWith("s") }
                 .filter { grammar.contains(it.split(";").first()) }
@@ -92,16 +95,31 @@ org.thosp.yourlocalweather_123""".split("\n")
                 .filter { grammar.contains(it.split(";").first()) }
                 .count()
 
-            result[m] = Pair(numStates, numWidgets)
+            result.add(listOf(numProductions, numStates, numWidgets))
         }
 
-        result.entries.forEach {
-            println("${it.key}\t${it.value.first}\t${it.value.second}")
-        }
+        val totalProductions = result.map { it.first() }.sum()
+        val avgProductions = result.map { it.first() }.average()
+        val totalStates = result.map { it.drop(1).first() }.sum()
+        val avgStates = result.map { it.drop(1).first() }.average()
+        val totalWidgets = result.map { it.drop(2).first() }.sum()
+        val avgWidgets = result.map { it.drop(2).first() }.average()
 
-        val totalStates = result.values.map { it.first }.sum()
-        val totalWidgets = result.values.map { it.second }.sum()
+        println("Total files = ${mappings.size}")
+        println("Total productions = $totalProductions")
+        println("Avg productions = $avgProductions")
+        println("Total states = $totalStates")
+        println("Avg states = $avgStates")
+        println("Total widgets = $totalWidgets")
+        println("Avg widgets = $avgWidgets")
 
-        println("Total\t$totalStates\t$totalWidgets")
+        println("Production")
+        println(result.joinToString(", ") { it.first().toString() })
+
+        println("States")
+        println(result.joinToString(", ") { it.drop(1).first().toString() })
+
+        println("Widgets")
+        println(result.joinToString(", ") { it.drop(2).first().toString() })
     }
 }

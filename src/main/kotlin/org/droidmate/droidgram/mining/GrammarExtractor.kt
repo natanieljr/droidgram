@@ -20,10 +20,30 @@ import java.nio.file.Paths
 import java.util.function.BiPredicate
 import kotlin.streams.toList
 
-class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Path?) {
+class GrammarExtractor(
+    private val mModelDir: Path,
+    private val mCoverageDir: Path?,
+    private val translateNames: Boolean
+) {
     private val mIdMapping = mutableMapOf<String, String>()
     private val mGrammar = MinedGrammar()
-    private val mStatesDir = mModelDir.resolve("states")
+
+    private val mStatesDir by lazy {
+        val statesDir = Files.find(
+            mModelDir,
+            5,
+            BiPredicate { p, _ -> Files.isDirectory(p) && p.fileName.toString() == "states" },
+            FileVisitOption.FOLLOW_LINKS
+        )
+            .findFirst()
+
+        if (statesDir.isPresent) {
+            statesDir.get()
+        } else {
+            throw IllegalArgumentException("Unable to find state directory in $mModelDir")
+        }
+    }
+
     private var mIsInitialized = false
 
     private val coveragePerAction by lazy {
@@ -56,9 +76,13 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         return if (uuid.isEmpty()) {
             ""
         } else {
-            mIdMapping.getOrPut(uuid) {
+            val newValue = if (!translateNames) {
+                uuid
+            } else {
                 prefix + (mIdMapping.values.count { it.startsWith(prefix) }.toString().padStart(2, '0'))
             }
+
+            mIdMapping.getOrPut(uuid) { newValue }
         }
     }
 
@@ -78,8 +102,8 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
     private fun getTraceFile(modelDir: Path): List<String> {
         val trace = Files.find(
             modelDir,
-            1,
-            BiPredicate { p, _ -> p.fileName.toString().contains("trace") },
+            5,
+            BiPredicate { p, _ -> p.fileName.toString().contains("trace") && p.fileName.toString().endsWith(".csv") },
             FileVisitOption.FOLLOW_LINKS
         )
             .findFirst()
@@ -105,7 +129,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
         val stateFile = mStatesDir.resolve("$this.csv")
         check(Files.exists(stateFile)) { "File for state $this does not exist in $mStatesDir" }
 
-        val apkName = mModelDir.fileName.toString()
+        val apkName = mStatesDir.parent.fileName.toString()
         val itemsFromApp = Files.readAllLines(stateFile)
             .any { it.contains(apkName) }
 
@@ -256,56 +280,86 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             .toMap()
     }
 
+    private fun write(useCoverage: Boolean, outputDir: Path, printToConsole: Boolean) {
+        val fileNameSuffix = if (useCoverage) {
+            "WithCoverage"
+        } else {
+            ""
+        }
+
+        val grammarJSON = this.grammar.asJsonStr(useCoverage)
+        val grammarFile = outputDir.resolve("grammar$fileNameSuffix.txt")
+        Files.write(grammarFile, grammarJSON.toByteArray())
+
+        val mapping = StringBuilder()
+        this.mapping
+            .toSortedMap()
+            .forEach { (key, value) ->
+                mapping.appendln("$key;$value")
+            }
+
+        val mappingFile = outputDir.resolve("translationTable$fileNameSuffix.txt")
+        Files.write(mappingFile, mapping.toString().toByteArray())
+
+        if (printToConsole) {
+            println("Grammar:")
+            val grammarStr = this.grammar.asString(useCoverage)
+            print(grammarStr)
+
+            println("\nMapping: $mappingFile")
+            print(mapping.toString())
+        }
+    }
+
     companion object {
         @JvmStatic
         private val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
-
-        @JvmStatic
-        private fun GrammarExtractor.write(useCoverage: Boolean, outputDir: Path, printToConsole: Boolean) {
-            val fileNameSuffix = if (useCoverage) {
-                "WithCoverage"
-            } else {
-                ""
-            }
-
-            val grammarJSON = this.grammar.asJsonStr(useCoverage)
-            val grammarFile = outputDir.resolve("grammar$fileNameSuffix.txt")
-            Files.write(grammarFile, grammarJSON.toByteArray())
-
-            val mapping = StringBuilder()
-            this.mapping
-                .toSortedMap()
-                .forEach { (key, value) ->
-                    mapping.appendln("$key;$value")
-                }
-
-            val mappingFile = outputDir.resolve("translationTable$fileNameSuffix.txt")
-            Files.write(mappingFile, mapping.toString().toByteArray())
-
-            if (printToConsole) {
-                println("Grammar:")
-                val grammarStr = this.grammar.asString(useCoverage)
-                print(grammarStr)
-
-                println("\nMapping: $mappingFile")
-                print(mapping.toString())
-            }
-        }
 
         @JvmStatic
         private fun extractGrammar(
             inputDir: Path,
             outputDir: Path,
             coverageDir: Path,
-            printToConsole: Boolean
+            printToConsole: Boolean,
+            translateNames: Boolean = false
         ): Grammar {
-            val extractor = GrammarExtractor(inputDir, coverageDir)
+            val extractor = GrammarExtractor(inputDir, coverageDir, translateNames)
             val grammar = extractor.extractGrammar()
 
             extractor.write(false, outputDir, printToConsole)
             extractor.write(true, outputDir, printToConsole)
 
             return grammar
+        }
+
+        @JvmStatic
+        fun merge(args: Array<String>, printToConsole: Boolean): Grammar {
+            val baseDir = Paths.get(args.getOrNull(0) ?: throw IOException("Missing input dir path"))
+                .toAbsolutePath()
+
+            val outputDir = Paths.get(args.getOrNull(1) ?: throw IOException("Missing output dir path"))
+                .toAbsolutePath()
+
+            check(Files.isDirectory(baseDir)) { "Input path is not a directory" }
+
+            val inputDirs = Files.list(baseDir)
+                .filter { Files.isDirectory(it) }
+                .toList()
+
+            check(inputDirs.isNotEmpty()) { "Input path does not contain any directory" }
+
+            val minedGrammars = inputDirs.map { inputDir ->
+                val coverageDir = inputDir.resolve("coverage")
+                check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
+                extract(inputDir, outputDir, coverageDir, printToConsole)
+            }
+
+            return GrammarMerger(outputDir, printToConsole).merge(minedGrammars)
+        }
+
+        @JvmStatic
+        fun extract(inputDir: Path, outputDir: Path, coverageDir: Path, printToConsole: Boolean): Grammar {
+            return extractGrammar(inputDir, outputDir, coverageDir, printToConsole)
         }
 
         @JvmStatic
@@ -324,7 +378,7 @@ class GrammarExtractor(private val mModelDir: Path, private val mCoverageDir: Pa
             val coverageDir = inputDir.parent.resolveSibling("coverage")
             check(Files.exists(coverageDir)) { "Coverage directory $coverageDir not found" }
 
-            return extractGrammar(inputDir, outputDir, coverageDir, printToConsole)
+            return extract(inputDir, outputDir, coverageDir, printToConsole)
         }
 
         @JvmStatic

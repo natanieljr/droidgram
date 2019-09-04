@@ -57,6 +57,13 @@ object ExperimentMain {
                         .apply { fuzzAllSeeds() }
                     exitProcess(0)
                 }
+                args.contains("merge") -> {
+                    val extractorArgs = args.filterNot { it.contains("merge") }.toTypedArray()
+                    val grammar = GrammarExtractor.merge(extractorArgs, true)
+                    Fuzzer(grammar, extractorArgs)
+                        .apply { fuzzAllSeeds() }
+                    exitProcess(0)
+                }
                 args.contains("loc") -> {
                     val extractorArgs = args.filterNot { it.contains("loc") }.toTypedArray()
                     val grammar = GrammarExtractor.extract(extractorArgs, true)

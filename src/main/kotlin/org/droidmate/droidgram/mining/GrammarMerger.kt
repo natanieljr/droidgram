@@ -40,7 +40,37 @@ class GrammarMerger(private val outputDir: Path, private val printToConsole: Boo
         rule: Production,
         expansions: Set<Production>
     ) {
-        this[rule]?.addAll(expansions)
+        val expansionSet = this[rule].orEmpty()
+
+        expansions.forEach { expansion ->
+            if (expansion !in expansionSet) {
+                this[rule]?.add(expansion)
+            } else {
+                this.mergeCoverages(rule, expansion)
+            }
+        }
+    }
+
+    private fun MutableMap<Production, MutableSet<Production>>.mergeCoverages(
+        rule: Production,
+        expansion: Production
+    ) {
+        val currentExpansionSet = this[rule].orEmpty()
+        val currentExpansion = currentExpansionSet.first { it == expansion }
+        val newCoverage = expansion.coverage
+
+        val currentCoverage = currentExpansion.coverage.toMutableSet()
+        currentCoverage.addAll(newCoverage)
+
+        val newProduction = Production(currentExpansion.values, currentCoverage)
+        val newExpansionSet = currentExpansionSet
+            .filterNot { it == currentExpansion }
+            .toMutableSet()
+            .also {
+                it.add(newProduction)
+            }
+
+        this.replace(rule, newExpansionSet)
     }
 
     private fun writeGrammar(grammar: Grammar) {

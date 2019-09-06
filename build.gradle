@@ -55,7 +55,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.0")
 
     // compile("org.droidmate:droidmate-2:2.0.0")
-    compile ("com.github.uds-se.droidmate:droidmate-2:2.0.0")
+    compile("com.github.hotzkow:explorationModel")
+    compile ("com.github.uds-se.droidmate:droidmate-2:master-SNAPSHOT")
 }
 
 compileKotlin {

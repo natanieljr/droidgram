@@ -12,6 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.lang.NumberFormatException
 import java.lang.StringBuilder
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
@@ -230,7 +231,13 @@ class GrammarExtractor(
                 else -> ""
             }
 
-            val actionId = data.last().toInt()
+            // There are 2 versions of the model, one which ends with the action ID, other which ends
+            // with a boolean for successful screenshot
+            val actionId = try {
+                data.last().toInt()
+            } catch(e: NumberFormatException) {
+                data.dropLast(1).last().toInt()
+            }
 
             // Create only if action was in the app or is launch/back
             if (action.isLaunchApp() || action.isPressBack() || sourceStateConcreteId.belongsToApp()) {

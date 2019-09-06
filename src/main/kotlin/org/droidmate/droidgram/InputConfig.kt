@@ -86,32 +86,33 @@ class InputConfig constructor(cfg: ConfigurationWrapper) {
     private val translationTableFile by lazy {
         val translationTableName = "translationTable.txt".toLowerCase()
 
-        val file = Files.walk(inputDir)
+        Files.walk(inputDir)
             .filter {
                 it.fileName.toString().toLowerCase() == translationTableName
             }
             .toList()
             .firstOrNull()
-
-        check(file != null) {
-            "Input directory doesn't contain a translation table ($translationTableName)"
-        }
-        file
     }
 
     val translationTable: Map<String, UUID> by lazy {
-        Files.readAllLines(translationTableFile)
-            .filter { it.isNotEmpty() }
-            .map { line ->
-                val data = line.split(";")
+        val dataFile = translationTableFile
 
-                assert(data.size == 2) { "Each line in the translation table should have 2 elements (ID;UUID)" }
+        if (dataFile == null) {
+            emptyMap()
+        } else {
+            Files.readAllLines(dataFile)
+                .filter { it.isNotEmpty() }
+                .map { line ->
+                    val data = line.split(";")
 
-                val id = data.first().trim()
-                val uuid = UUID.fromString(data.last().trim())
+                    assert(data.size == 2) { "Each line in the translation table should have 2 elements (ID;UUID)" }
 
-                Pair(id, uuid)
-            }.toMap()
+                    val id = data.first().trim()
+                    val uuid = UUID.fromString(data.last().trim())
+
+                    Pair(id, uuid)
+                }.toMap()
+        }
     }
 
     private val coverageFiles: List<Path> by lazy {

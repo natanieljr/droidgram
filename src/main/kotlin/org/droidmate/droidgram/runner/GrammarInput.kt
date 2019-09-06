@@ -13,7 +13,11 @@ import java.util.UUID
 data class GrammarInput(val grammarId: String, val widget: UUID, val action: String, val textualInput: String) {
     companion object {
         private fun Map<String, UUID>.getUID(key: String): UUID {
-            return this[key] ?: throw IllegalArgumentException("Key $key not found in the translation table")
+            return if (this.isEmpty()) {
+                UUID.fromString(key)
+            } else {
+                this[key] ?: throw IllegalArgumentException("Key $key not found in the translation table")
+            }
         }
 
         val empty: GrammarInput

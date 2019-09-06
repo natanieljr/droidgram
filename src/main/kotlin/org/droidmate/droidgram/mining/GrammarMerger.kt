@@ -81,7 +81,7 @@ class GrammarMerger(private val outputDir: Path, private val printToConsole: Boo
         if (printToConsole) {
             println("Grammar:")
             val grammarStr = grammar.asString(false)
-            print(grammarStr)
+            println(grammarStr)
         }
     }
 

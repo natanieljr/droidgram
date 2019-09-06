@@ -9,12 +9,20 @@ class CustomState(_widgets: Collection<CustomWidget>, isHomeScreen: Boolean) : S
     }
 
     override val actionableWidgets: List<CustomWidget>
-        get() = super.actionableWidgets
-            .filterNot { it.isToast() }
-            // .filter { it.hasValueForId() }
+        get() {
+            val originalWidgets = super.actionableWidgets
+
+            return originalWidgets
+                .filterNot { it.isToast() }
+                .filter { it.hasValueForId() }
+        }
 
     override val visibleTargets: List<CustomWidget>
-        get() = super.visibleTargets
-            .filterNot { it.isToast() }
-            // .filter { it.hasValueForId() }
+        get() {
+            val originalTargets = super.visibleTargets
+
+            return originalTargets
+                .filterNot { it.isToast() }
+                .filter { it.hasValueForId() }
+        }
 }

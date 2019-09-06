@@ -3,23 +3,25 @@ package org.droidmate.droidgram.exploration
 import org.droidmate.deviceInterface.exploration.UiElementPropertiesI
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.interaction.Widget
+import org.droidmate.explorationModel.toUUID
+import org.omg.CORBA.Object
+import java.util.UUID
 
 class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Widget(properties, parentId) {
-    /* val childrenId: MutableSet<UUID> = mutableSetOf()
+    private val mLock = Object()
+    private var idInitialized: Boolean = false
+    internal val childrenId: MutableSet<UUID> = mutableSetOf()
 
     private val newUidString by lazy {
         listOf(className, packageName, isPassword, isKeyboard, xpath).joinToString(separator = "<;>")
     }
 
-    /*
     private val uidStringWithChildren by lazy {
         listOf(className, packageName, isPassword, isKeyboard, childrenId.sorted()).joinToString(separator = "<;>")
     }
-    */
 
-    */
     fun isToast(): Boolean = className.contains("Toast")
-    /*
+
     fun hasValueForId(): Boolean {
         return when {
             isToast() -> false
@@ -34,11 +36,13 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
                 else -> false
             }
 
-            !isKeyboard && nlpText.isNotBlank() -> { // compute id from textual nlpText if there is any
-                nlpText.isNotEmpty()
-            }
+            // compute id from textual nlpText if there is any
+            !isKeyboard && nlpText.isNotBlank() -> nlpText.isNotEmpty()
 
-            // TODO childrenId.isNotEmpty() -> true
+            // Images and image buttons are also valid
+            className.contains("Image") -> true
+
+            childrenId.isNotEmpty() -> true
 
             // we have an Widget without any visible text
             else -> false
@@ -46,6 +50,10 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
     }
 
     override fun computeUId(): UUID {
+        synchronized(mLock) {
+            check(!idInitialized) { "ID was already initialized" }
+            idInitialized = true
+        }
         return when {
             resourceId.isNotBlank() -> resourceId.toUUID()
 
@@ -65,11 +73,32 @@ class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Wi
                 }
             }
 
-            // TODO childrenId.isNotEmpty() -> uidStringWithChildren.toUUID()
+            childrenId.isNotEmpty() -> uidStringWithChildren.toUUID()
 
             // we have an Widget without any visible text
             else -> newUidString.toUUID()
         }
     }
-    */
+
+    private fun String.childIfNotEmpty(label: String) = if (isNotBlank()) {
+        "$label=$this"
+    } else {
+        ""
+    }
+
+    override fun toString(): String {
+        val id = if (idInitialized) {
+            uid.toString()
+        } else {
+            "uninitialized"
+        }
+        return "interactive=$isInteractive-${id}_$configId: $simpleClassName" +
+                "[" +
+                "${text.childIfNotEmpty("text")} " +
+                "${hintText.childIfNotEmpty("hint")} " +
+                "${contentDesc.childIfNotEmpty("description")} " +
+                "${resourceId.childIfNotEmpty("resId")}, " +
+                "inputType=$inputType $visibleBounds" +
+                "]"
+    }
 }

@@ -235,7 +235,7 @@ class GrammarExtractor(
             // with a boolean for successful screenshot
             val actionId = try {
                 data.last().toInt()
-            } catch(e: NumberFormatException) {
+            } catch (e: NumberFormatException) {
                 data.dropLast(1).last().toInt()
             }
 

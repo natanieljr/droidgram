@@ -42,8 +42,7 @@ class GrammarReplayMF(
 
     private val inputList by lazy {
         val inputs = generatedInput
-            .split(" ")
-            .filter { it.isNotEmpty() }
+            .split("ÿ") // also: " " does not work anyway, should be ""? ... was: " ", but problem for example with "United States" -> split            .filter { it.isNotEmpty() }
             .filter { it.contains("(") }
             .flatMap {
                 val actionInput =

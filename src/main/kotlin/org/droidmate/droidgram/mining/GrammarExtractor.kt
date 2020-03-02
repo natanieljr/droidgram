@@ -222,7 +222,8 @@ class GrammarExtractor(
             val resultStateConcreteId = data[3]
 
             val payload = when (action) {
-                TextInsert.name -> ",${data.dropLast(1).last()}"
+                // TextInsert.name -> ",${data.dropLast(1).last()}" // This is "Action-Id", which we would pass twice in this case to createProduction.
+                TextInsert.name -> ",${data.dropLast(2).last()}" // This is "Data"
 
                 "Swipe" -> ",${data.dropLast(1).last()
                     .replace(",", ";")

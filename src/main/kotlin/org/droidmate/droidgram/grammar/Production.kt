@@ -33,10 +33,10 @@ open class Production(
 
     fun asString(useCoverage: Boolean): String {
         return if (useCoverage) {
-            coverage.joinToString(" ") { p -> p.value } +
-                    nonTerminals.joinToString("") { p -> p.value }
+            coverage.joinToString("ÿ") { p -> p.value } +
+                    nonTerminals.joinToString("ÿ") { p -> p.value }
         } else {
-            values.joinToString("") { p -> p.value }
+            values.joinToString("ÿ") { p -> p.value }
         }
     }
 

@@ -4,7 +4,6 @@ import org.droidmate.deviceInterface.exploration.UiElementPropertiesI
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.explorationModel.toUUID
-import org.omg.CORBA.Object
 import java.util.UUID
 
 class CustomWidget(properties: UiElementPropertiesI, parentId: ConcreteId?) : Widget(properties, parentId) {
